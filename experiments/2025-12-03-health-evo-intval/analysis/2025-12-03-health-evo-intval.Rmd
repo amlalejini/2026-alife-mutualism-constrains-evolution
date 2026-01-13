@@ -33,6 +33,7 @@ theme_set(theme_cowplot())
 plot_dir <- paste(
   working_directory,
   "plots",
+  "update_50k",
   sep = "/"
 )
 dir.create(
@@ -55,6 +56,7 @@ Load summary data.
 summary_data_path <- paste(
   working_directory,
   "data",
+  "update_50k",
   "summary.csv",
   sep = "/"
 )
@@ -696,6 +698,7 @@ Load symbiont interaction values
 sym_int_vals_path <-  paste(
   working_directory,
   "data",
+  "update_50k",
   "symbiont_interaction_values.csv",
   sep = "/"
 )
@@ -1168,4 +1171,63 @@ ggsave(
   width = 10,
   height = 10
 )
+```
+
+## Individual tasks over time
+
+## Task performance over time
+
+```{r}
+over_time_sym_parent_task_data <- over_time_sym_parent_task_data %>%
+  mutate(org_type = "symbiont")
+
+host_over_time_parent_task_data <- host_over_time_parent_task_data %>%
+  mutate(org_type = "host")
+
+over_time_parent_task_data <- full_join(
+  over_time_sym_parent_task_data,
+  host_over_time_parent_task_data
+)
+over_time_parent_task_data <- over_time_parent_task_data %>%
+  mutate(
+    org_type = as.factor(org_type)
+  )
+```
+
+```{r}
+treatments <- c("VT=0_IM=1", "VT=0_IM=2", "VT=0_IM=4", "VT=0_IM=8")
+
+for (trt in treatments) {
+  print(trt)
+  p <- over_time_parent_task_data %>%
+    filter(treatment == trt) %>%
+    ggplot(
+      aes(
+        x = update,
+        y = task_in_parent_count,
+        color = org_type,
+        fill = org_type
+      )
+    ) +
+    geom_line() +
+    labs(
+      title = trt
+    ) +
+    facet_grid(
+      SEED ~ task,
+      scales = "free_y",
+      labeller = label_both
+    )
+
+  ggsave(
+    file = paste(
+      plot_dir,
+      paste0("tasks_over_time_", trt, ".pdf"),
+      sep = "/"
+    ),
+    plot = p,
+    width = 20,
+    height = 40
+  )
+}
 ```
