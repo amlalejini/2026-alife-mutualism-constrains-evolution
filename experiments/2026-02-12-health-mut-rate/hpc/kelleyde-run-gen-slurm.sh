@@ -1,22 +1,22 @@
 #!/usr/bin/env bash
 
 REPLICATES=50
-EXP_SLUG=2026-01-14-health-mut-rate
-SEED_OFFSET=210000
+EXP_SLUG=2026-02-12-health-mut-rate
+SEED_OFFSET=230000
 JOB_TIME=24:00:00
 JOB_MEM=8G
 PROJECT_NAME=2025-fall-gvsu-symbiosis-mechanisms
 RUNS_PER_SUBDIR=1000
-USERNAME=lalejini
-ACCOUNT=devolab
-# HPC_ENV_FILE=clipper-hpc-env.sh
-HPC_ENV_FILE=msu-hpc-env.sh
+USERNAME=kelleyde
+# ACCOUNT=devolab
+HPC_ENV_FILE=clipper-hpc-env.sh
+# HPC_ENV_FILE=msu-hpc-env.sh
 
-REPO_DIR=/mnt/home/${USERNAME}/devo_ws/${PROJECT_NAME} # <-- CHANGE THIS to where ever you have this repository stored on your account
+REPO_DIR=/mnt/home/kelleyde/research/${PROJECT_NAME} # <-- CHANGE THIS to where ever you have this repository stored on your account
 REPO_SCRIPTS_DIR=${REPO_DIR}/scripts
 HOME_EXP_DIR=${REPO_DIR}/experiments/${EXP_SLUG}
 
-DATA_DIR=/mnt/scratch/${USERNAME}/data/${PROJECT_NAME}/${EXP_SLUG}
+DATA_DIR=/mnt/scratch/lalejina_scratch/${USERNAME}/data/${PROJECT_NAME}/${EXP_SLUG}
 # DATA_DIR=/mnt/scratch/${USERNAME}_scratch/${PROJECT_NAME}/${EXP_SLUG}
 JOB_DIR=${DATA_DIR}/jobs
 CONFIG_DIR=${HOME_EXP_DIR}/hpc/config
@@ -38,5 +38,4 @@ python3 gen-slurm.py \
   --replicates ${REPLICATES} \
   --job_dir ${JOB_DIR} \
   --seed_offset ${SEED_OFFSET} \
-  --hpc_account ${ACCOUNT} \
   --hpc_env_file ${HPC_ENV_FILEPATH}
