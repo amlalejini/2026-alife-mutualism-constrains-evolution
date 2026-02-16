@@ -1,0 +1,22 @@
+#!/bin/bash --login
+########## Define Resources Needed with SBATCH Lines ##########
+
+#SBATCH --time=01:00:00             # limit of wall clock time - how long the job will run (same as -t)
+#SBATCH --mem=3G                    # memory required per node - amount of memory (in bytes)
+#SBATCH --job-name aggregateData    # you can give your job a name for easier identification (same as -J)
+
+########## Command Lines to Run ##########
+
+module load python 
+
+source home/kelleyde/research/2025-fall-gvsu-symbiosis-mechanisms/pyenv/bin/activate
+
+DATA_DIR=/home/kelleyde/mnt/scratch/lalejina_scratch/kelleyde/data/2025-fall-gvsu-symbiosis-mechanisms/2026-02-12-health-mut-rate/
+DUMP_DIR=/home/kelleyde/research/2025-fall-gvsu-symbiosis-mechanisms/experiments/2026-02-12-health-mut-rate/
+SUMMARY_UPDATE=500000
+
+srun python home/kelleyde/research/2025-fall-gvsu-symbiosis-mechanisms/experiments/2026-02-12-health-mut-rate/analysis/aggregate.py \
+  --data_dir ${DATA_DIR} \
+  --dump_dir ${DUMP_DIR} \
+  --summary_update ${SUMMARY_UPDATE}
+ 
