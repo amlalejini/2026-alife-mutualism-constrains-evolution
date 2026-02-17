@@ -13,7 +13,7 @@ REPO_DIR=/mnt/home/kelleyde/research/${PROJECT_NAME}
 source ${HPC_ENV_FILEPATH}
 source ${REPO_DIR}/pyenv/bin/activate
 
-RUN_PARAMS="--data_dir /mnt/scratch/lalejina_scratch/kelleyde/data/2025-fall-gvsu-symbiosis-mechanisms/2026-02-12-health-mut-rate/ --dump_dir /research/2025-fall-gvsu-symbiosis-mechanisms/experiments/2026-02-12-health-mut-rate/ --summary_update 500000"
+RUN_PARAMS="--data_dir /mnt/scratch/lalejina_scratch/kelleyde/data/2025-fall-gvsu-symbiosis-mechanisms/2026-02-12-health-mut-rate/ --dump_dir /mnt/home/kelleyde/research/2025-fall-gvsu-symbiosis-mechanisms/experiments/2026-02-12-health-mut-rate/ --summary_update 500000"
 
 srun python3 ${REPO_DIR}/experiments/2026-02-12-health-mut-rate/analysis/aggregate.py ${RUN_PARAMS}
 
