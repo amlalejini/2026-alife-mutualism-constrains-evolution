@@ -15,7 +15,7 @@ source ${REPO_DIR}/pyenv/bin/activate
 
 DATA_DIR="--data_dir /mnt/scratch/lalejina_scratch/kelleyde/data/2025-fall-gvsu-symbiosis-mechanisms/2026-02-12-health-mut-rate/"
 DUMP_DIR="--dump_dir /mnt/home/kelleyde/"
-SUMMARY_UPDATE="--summary_update 500000"
+SUMMARY_UPDATE="--summary_update 200000"
 #RUN_PARAMS="--data_dir /mnt/scratch/lalejina_scratch/kelleyde/data/2025-fall-gvsu-symbiosis-mechanisms/2026-02-12-health-mut-rate/ --dump_dir /mnt/home/kelleyde/ --summary_update 500000"
 
 srun python3 ${REPO_DIR}/experiments/2026-02-12-health-mut-rate/analysis/aggregate.py ${DATA_DIR} ${DUMP_DIR} ${SUMMARY_UPDATE}
