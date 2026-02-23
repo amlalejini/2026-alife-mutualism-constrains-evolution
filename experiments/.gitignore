@@ -1,3 +1,5 @@
 !base_slurm_script.txt
 test/
 *.tar.gz
+
+tasks_over_time_*.pdf
