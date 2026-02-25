@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 REPLICATES=50
-EXP_SLUG=2025-12-03-health-evo-intval
-SEED_OFFSET=170000
+EXP_SLUG=2026-02-25-health-evo-intval
+SEED_OFFSET=260000
 JOB_TIME=24:00:00
 JOB_MEM=8G
 PROJECT_NAME=2025-fall-gvsu-symbiosis-mechanisms
