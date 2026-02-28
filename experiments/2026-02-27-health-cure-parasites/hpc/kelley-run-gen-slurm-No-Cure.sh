@@ -35,5 +35,4 @@ python3 gen-slurmNoCure.py \
   --replicates ${REPLICATES} \
   --job_dir ${JOB_DIR} \
   --seed_offset ${SEED_OFFSET} \
-  --hpc_account ${ACCOUNT} \
   --hpc_env_file ${HPC_ENV_FILEPATH}
