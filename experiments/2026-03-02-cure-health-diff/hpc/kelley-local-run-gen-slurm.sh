@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 REPLICATES=50
-EXP_SLUG=2025-11-25-health-diff-rewards
+EXP_SLUG=2026-03-02-cure-health-diff
 SEED_OFFSET=160000
 JOB_TIME=24:00:00
 JOB_MEM=8G

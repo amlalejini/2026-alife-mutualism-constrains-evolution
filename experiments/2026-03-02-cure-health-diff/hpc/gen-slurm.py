@@ -70,12 +70,12 @@ combos.register_var("symbiont__COPY_OVER")
 combos.register_var("cycle_prop__COPY_OVER")
 combos.register_var("interaction_multiplier__COPY_OVER")
 combos.register_var("task_credit__COPY_OVER")
+combos.register_var("cure_config__COPY_OVER")
 
 combos.add_val(
     "symbiont__COPY_OVER",
     [
         "-START_MOI 0 -HEALTH_TYPE parasite -VERTICAL_TRANSMISSION 0",
-        "-START_MOI 1 -HEALTH_TYPE parasite -VERTICAL_TRANSMISSION 0",
         "-START_MOI 1 -HEALTH_TYPE mutualist -VERTICAL_TRANSMISSION 1"
     ]
 )
@@ -88,10 +88,7 @@ combos.add_val(
 combos.add_val(
     "interaction_multiplier__COPY_OVER",
     [
-        "-MUTUALIST_CYCLE_DONATE_MULTIPLIER 1 -PARASITE_CYCLE_STEAL_MULTIPLIER 1",
-        "-MUTUALIST_CYCLE_DONATE_MULTIPLIER 2 -PARASITE_CYCLE_STEAL_MULTIPLIER 2",
-        "-MUTUALIST_CYCLE_DONATE_MULTIPLIER 4 -PARASITE_CYCLE_STEAL_MULTIPLIER 4",
-        "-MUTUALIST_CYCLE_DONATE_MULTIPLIER 8 -PARASITE_CYCLE_STEAL_MULTIPLIER 8"
+        "-MUTUALIST_CYCLE_DONATE_MULTIPLIER 4 -PARASITE_CYCLE_STEAL_MULTIPLIER 4"
     ]
 )
 
@@ -102,6 +99,12 @@ combos.add_val(
     ]
 )
 
+combos.add_val(
+    "cure_config__COPY_OVER",
+    [
+        "-CURE 0 -CURE_UPDATES 0"
+    ]
+)
 
 def main():
     # Configure command line arguments
