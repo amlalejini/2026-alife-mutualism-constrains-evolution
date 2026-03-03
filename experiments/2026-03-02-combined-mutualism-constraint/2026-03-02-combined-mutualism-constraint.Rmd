@@ -1,0 +1,495 @@
+# Combined analyses for mutualism constraint experiments
+
+## Dependencies and setup
+
+```{r}
+library(tidyverse)
+library(cowplot)
+library(RColorBrewer)
+library(khroma)
+library(rstatix)
+library(knitr)
+library(kableExtra)
+library(viridis)
+library(boot)
+library(ggsignif)
+library(ggh4x)
+```
+
+```{r}
+# Build relative path from R's working directory to what is actually the working
+# directory for this experiment.
+task_credit_exp_slug <- "2026-02-23-health-task-credit"
+task_rewards_exp_slug <- "2026-02-23-health-task-rewards"
+donate_prop_exp_slug <- "2026-02-24-health-donate-prop"
+synergy_exp_slug <- "2026-02-24-health-synergy"
+
+working_directory <- paste(
+  "experiments",
+  "2026-03-02-combined-mutualism-constraint",
+  sep = "/"
+)
+```
+
+```{r}
+# Use the cowplot theme as our default for ggplots
+theme_set(theme_cowplot())
+# Create directory to save plots
+plot_dir <- paste(
+  working_directory,
+  "plots",
+  sep = "/"
+)
+dir.create(
+  plot_dir,
+  showWarnings = FALSE
+)
+```
+
+```{r}
+tasks <- c("NOT", "NAND", "OR_NOT", "AND", "OR", "AND_NOT", "NOR", "XOR", "EQU")
+max_pop_size <- 100 * 100
+threshold <- 0.025 * max_pop_size
+num_replicates <- 50
+```
+
+## Load and preprocess task complexity data
+
+```{r}
+data_fname <- "host_max_task_complexity.csv"
+data_subpath <- paste("analysis", "data", data_fname, sep = "/")
+task_credit_data <- read_csv(
+  paste(
+    "experiments",
+    task_credit_exp_slug,
+    data_subpath,
+    sep = "/"
+  )
+)
+task_rewards_data <- read_csv(
+  paste(
+    "experiments",
+    task_rewards_exp_slug,
+    data_subpath,
+    sep = "/"
+  )
+)
+donate_prop_data <- read_csv(
+  paste(
+    "experiments",
+    donate_prop_exp_slug,
+    data_subpath,
+    sep = "/"
+  )
+)
+synergy_data <- read_csv(
+  paste(
+    "experiments",
+    synergy_exp_slug,
+    data_subpath,
+    sep = "/"
+  )
+)
+```
+
+Join expeirment data together to make to centralize preprocessing.
+
+```{r}
+# First, collapse the treatment variable across experiments
+
+# Task credit experiment
+task_credit_data <- task_credit_data %>%
+  mutate(
+    task_credit = case_when(
+      task_credit == "H0S0" ~ "No restrictions",
+      task_credit == "H0S1" ~ "Symbionts restricted",
+      task_credit == "H1S0" ~ "Hosts restricted",
+      task_credit == "H1S1" ~ "Both restricted",
+      .default = "unknown"
+    )
+  ) %>%
+  mutate(
+    treatment = as.factor(task_credit)
+  )
+
+# Environment rewards experiment
+task_rewards_data <- task_rewards_data %>%
+  mutate(
+    treatment = as.factor(environment)
+  )
+
+# Donate proportion experiment
+donate_prop_data <- donate_prop_data %>% mutate(
+  treatment = as.factor(MUTUALIST_CYCLE_GAIN_PROP)
+)
+
+# Synergy factor experiment
+synergy_data <- synergy_data %>% mutate(
+  treatment = as.factor(interaction_multiplier)
+)
+
+max_complexity_data <- bind_rows(
+  task_credit_data %>% select(!task_credit),
+  task_rewards_data %>% select(!environment),
+  donate_prop_data %>% select(!MUTUALIST_CYCLE_GAIN_PROP),
+  synergy_data %>% select(!interaction_multiplier)
+)
+treatment_levels <- c(
+  "No restrictions",
+  "Symbionts restricted",
+  "Hosts restricted",
+  "Both restricted",
+  "x0.5",
+  "x1",
+  "x2",
+  "x4",
+  "x8",
+  "x16",
+  "0.125",
+  "0.25",
+  "0.5",
+  "0.75",
+  "0.875",
+  "1",
+  "2",
+  "4",
+  "8"
+)
+max_complexity_data <- max_complexity_data %>%
+  mutate(
+    treatment = factor(
+      treatment,
+      levels = treatment_levels
+    ),
+    experiment = as.factor(experiment),
+    sym_condition = factor(
+      sym_condition,
+      levels = c("no-syms", "mutualist")
+    )
+  )
+
+mean_max_complexity_data <- max_complexity_data %>%
+  group_by(
+    experiment,
+    treatment,
+    sym_condition
+  ) %>%
+  summarise(
+    mean_max_task_complexity = mean(max_task_complexity),
+    min_max_task_complexity = min(max_task_complexity),
+    max_max_task_complexity = max(max_task_complexity),
+    ci = list(
+      mean_cl_boot(
+        max_task_complexity,
+        conf.int = 0.99,
+        B = 10000
+      ) %>%
+      rename(mean = y, lwr = ymin, upr = ymax)
+    )
+  ) %>%
+  unnest(cols = c(ci))
+```
+
+```{r}
+exp_slugs <- levels(max_complexity_data$experiment)
+# exp_slugs <- c("2026-02-24-health-synergy")
+
+stats_df <- data.frame(
+  experiment = as.character(),
+  treatment = as.character(),
+  p_value = as.numeric(),
+  sig = as.logical(),
+  group1 = as.character(),
+  group2 = as.character(),
+  y_position = as.double()
+)
+
+alpha <- 0.05
+
+for (exp in exp_slugs) {
+  print(paste("Running tests for", exp))
+  # Filter to just this experiment
+  # - Strip off extra levels in treatment factor
+  exp_data <- max_complexity_data %>%
+    filter(experiment == exp) %>%
+    mutate(treatment = as.character(treatment)) %>%
+    mutate(treatment = as.factor(treatment))
+  treatments <- levels(exp_data$treatment)
+  for (trt in treatments) {
+    # Filter to just this treatment
+    trt_data <- exp_data %>%
+      filter(treatment == trt)
+    print(paste(" Testing", trt))
+    wt_result <- wilcox.test(
+      x = filter(trt_data, sym_condition == "no-syms")$max_task_complexity,
+      y = filter(trt_data, sym_condition == "mutualist")$max_task_complexity
+    )
+    p_val <- wt_result$p.value
+    # Calculate y position for drawing indicator
+    y_pos <- max(trt_data$max_task_complexity) + 0.4
+
+    stats_df <- stats_df %>%
+      add_row(
+        experiment = exp,
+        treatment = trt,
+        p_value = p_val,
+        sig = p_val <= alpha,
+        group1 = "no-syms",
+        group2 = "mutualist",
+        y_position = y_pos
+      )
+  }
+}
+
+stats_df <- stats_df %>%
+  mutate(
+    short_p_value = signif(p_value, digits = 3),
+    treatment = factor(
+      treatment,
+      levels = treatment_levels
+    )
+  ) %>%
+  mutate(
+    label = case_when(
+      short_p_value <= 10^-4 ~ "p < 1e-04",
+      short_p_value <= alpha ~ paste0("p = ", short_p_value),
+      .default = "N.S."
+    )
+  )
+```
+
+## Plot functions
+
+Functions to generate constraint plots.
+
+```{r}
+experiment_slug <- task_credit_exp_slug
+
+facet_titles <- list()
+facet_titles[[task_credit_exp_slug]] <- "Restricted to one function"
+facet_titles[[task_rewards_exp_slug]] <- "Function reward levels"
+facet_titles[[donate_prop_exp_slug]] <- "Mutualist donate proportion"
+facet_titles[[synergy_exp_slug]] <- "Synergy factor"
+
+plot_max_complexity_bar <- function(
+  experiment_slug
+) {
+  mean_data <- mean_max_complexity_data %>%
+    filter(experiment == experiment_slug)
+
+  dist_data <- max_complexity_data %>%
+    filter(experiment == experiment_slug)
+
+  stat_data <- stats_df %>%
+    filter(experiment == experiment_slug)
+
+  facet_label <- facet_titles[[experiment_slug]]
+
+  plot <- mean_data %>%
+    ggplot(
+      aes(x = sym_condition, y = mean_max_task_complexity)
+    ) +
+    geom_bar(
+      aes(fill = sym_condition, color = sym_condition),
+      stat = "identity"
+    ) +
+    geom_point(
+      data = dist_data,
+      mapping = aes(x = sym_condition, y = max_task_complexity),
+      position = position_jitter(width = .4, height = 0.05),
+      size = .7,
+      alpha = 0.9,
+      color = "darkgray",
+      fill = "darkgray"
+    ) +
+    geom_linerange(
+      aes(ymin = lwr, ymax = upr),
+      alpha = 0.9,
+      linewidth = 0.7,
+      color = "black"
+    ) +
+    geom_signif(
+      data = filter(stat_data, sig),
+      mapping = aes(
+        annotations = label,
+        y_position = y_position,
+        xmin = group1,
+        xmax = group2
+      ),
+      manual = TRUE,
+      inherit.aes = FALSE,
+      tip_length = c(0),
+      textsize = 2.5,
+      vjust = -0.3
+    ) +
+    scale_x_discrete() +
+    scale_fill_bright() +
+    scale_color_bright() +
+    scale_y_continuous(
+      limits = c(0, 6),
+      breaks = c(0, 1, 2, 3, 4, 5)
+    ) +
+    # facet_wrap(~treatment, nrow = 1) +
+    facet_nested_wrap(~paste(facet_label) + treatment, nrow = 1) +
+    theme(
+      legend.position = "none"
+    )
+  return(plot)
+}
+```
+
+## Constraint visualizations by experiment
+
+```{r}
+task_credit_constraint_plt <- plot_max_complexity_bar(
+  task_credit_exp_slug
+)
+
+task_rewards_plt <- plot_max_complexity_bar(
+  task_rewards_exp_slug
+)
+
+donate_prop_plt <- plot_max_complexity_bar(
+  donate_prop_exp_slug
+)
+
+synergy_plt <- plot_max_complexity_bar(
+  synergy_exp_slug
+)
+```
+
+Save individual plots
+
+```{r}
+ggsave(
+  file = paste(
+    plot_dir,
+    "task_credit_constraint_plt.pdf",
+    sep = "/"
+  ),
+  plot = task_credit_constraint_plt,
+  width = 7,
+  height = 3
+)
+ggsave(
+  file = paste(
+    plot_dir,
+    "task_rewards_plt.pdf",
+    sep = "/"
+  ),
+  plot = task_rewards_plt,
+  width = 7,
+  height = 3
+)
+ggsave(
+  file = paste(
+    plot_dir,
+    "donate_prop_plt.pdf",
+    sep = "/"
+  ),
+  plot = donate_prop_plt,
+  width = 7,
+  height = 3
+)
+ggsave(
+  file = paste(
+    plot_dir,
+    "synergy_plt.pdf",
+    sep = "/"
+  ),
+  plot = synergy_plt,
+  width = 7,
+  height = 3
+)
+```
+
+### Combine into single figure panel
+
+```{r}
+x_labels <- c("None", "Mut.")
+y_label <- "Function\ncomplexity"
+
+shared_theme <- theme(
+  strip.background = element_rect(
+    fill = "white",
+    colour = "black"
+    # linetype="dotted",
+    # size = 0.2,
+  ),
+  strip.text = element_text(size = 10),
+  axis.text.x = element_text(size = 10),
+  axis.text.y = element_text(size = 10),
+  axis.title.y = element_text(size = 12),
+) +
+panel_border(color = "black", size = 0.8)
+
+
+plot_panel <- plot_grid(
+  task_rewards_plt +
+    scale_x_discrete(
+      labels = x_labels
+    ) +
+    labs(
+      y = y_label
+    ) +
+    theme(
+      axis.title.x = element_blank()
+    ) +
+    shared_theme,
+  donate_prop_plt +
+    scale_x_discrete(
+      labels = x_labels
+    ) +
+    labs(
+      y = y_label
+    ) +
+    theme(
+      axis.title.x = element_blank()
+    ) +
+    shared_theme,
+  synergy_plt +
+    scale_x_discrete(
+      labels = x_labels
+    ) +
+    labs(
+      y = y_label
+    ) +
+    shared_theme +
+    theme(
+      axis.title.x = element_blank(),
+      # plot.margin = margin(r = 8 - (1.33 * 5), unit = "in")
+    ) +
+    shared_theme,
+  task_credit_constraint_plt +
+    scale_x_discrete(
+      labels = x_labels
+    ) +
+    labs(
+      y = y_label,
+      x = "Symbiont"
+    ) +
+    theme(
+      axis.title.x = element_text(size = 12)
+      # plot.margin = margin(r = 8 - (1.33 * 4), unit = "in")
+    ) +
+    shared_theme,
+  labels = c("A)", "B)", "C)", "D)"),
+  nrow = 4,
+  ncol = 1,
+  axis = "l"
+)
+
+# plot_panel
+
+save_plot(
+  filename = paste(
+    plot_dir,
+    "fig-mutualism-constraint.pdf",
+    sep = "/"
+  ),
+  plot = plot_panel,
+  base_width = 7,
+  base_height = 8.25,
+  dpi = 600
+)
+```
