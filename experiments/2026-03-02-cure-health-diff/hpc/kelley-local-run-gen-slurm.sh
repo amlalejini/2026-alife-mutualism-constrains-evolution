@@ -7,7 +7,7 @@ JOB_TIME=24:00:00
 JOB_MEM=8G
 PROJECT_NAME=2025-fall-gvsu-symbiosis-mechanisms
 RUNS_PER_SUBDIR=1000
-USERNAME=lalejini
+USERNAME=kelleyde
 ACCOUNT=devolab
 HPC_ENV_FILE=clipper-hpc-env.sh
 
