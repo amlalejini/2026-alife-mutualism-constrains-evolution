@@ -113,7 +113,19 @@ cur_update_info_fields_time_series = {
     "AND_NOT_in_sym_parent_org_counts",
     "NOR_in_sym_parent_org_counts",
     "XOR_in_sym_parent_org_counts",
-    "EQU_in_sym_parent_org_counts"
+    "EQU_in_sym_parent_org_counts",
+    "host_parent_entropy_task_sets",
+    "host_current_entropy_task_sets",
+    "host_parent_num_task_sets",
+    "host_current_num_task_sets",
+    "sym_parent_entropy_task_sets",
+    "sym_current_entropy_task_sets",
+    "sym_current_num_task_sets",
+    "sym_parent_num_task_sets",
+    "host_sym_perfect_matches_total",
+    "host_sym_any_matches_total",
+    "CurUpdate_sym_mean_generations",
+    "CurUpdate_host_mean_generations"
 }
 
 tasks_file_fields_time_series = {
@@ -138,7 +150,10 @@ tasks_file_fields_time_series = {
 }
 
 transmission_rates_fields_time_series = {
-
+    "attempts_horiztrans",
+    "successes_horiztrans",
+    "attempts_verttrans",
+    "successes_verttrans"
 }
 
 def extract_summary_data(data, target_update, fields, prefix=None):
