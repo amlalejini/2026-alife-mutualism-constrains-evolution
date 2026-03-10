@@ -63,7 +63,9 @@ run_cfg_fields_summary = {
     "TASK_PROFILE_MODE",
     "UPDATES",
     "VERTICAL_TRANSMISSION",
-    "VT_TASK_MATCH"
+    "VT_TASK_MATCH",
+    "CURE",
+    "CURE_UPDATES" 
 }
 
 sym_int_vals_fields_summary = {
@@ -76,7 +78,9 @@ run_cfg_fields_time_series = {
     "HEALTH_TYPE",
     "VERTICAL_TRANSMISSION",
     "MUTUALIST_CYCLE_DONATE_MULTIPLIER",
-    "PARASITE_CYCLE_STEAL_MULTIPLIER"
+    "PARASITE_CYCLE_STEAL_MULTIPLIER",
+    "CURE",
+    "CURE_UPDATES" 
 }
 
 org_counts_fields_time_series = {
