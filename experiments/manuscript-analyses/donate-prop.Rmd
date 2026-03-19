@@ -655,7 +655,7 @@ sym_max_task_complexity_plt
 
 Over time:
 
-```{r}
+```{r, fig.width=10, fig.height=15}
 host_parent_num_task_sets_plt <- time_data %>%
   # sample to make plotting faster
   filter(update %% 1000 == 0) %>%
@@ -736,7 +736,7 @@ host_final_num_task_sets_elapsed_plt
 
 Over time:
 
-```{r}
+```{r, fig.width=10, fig.height=15}
 host_parent_entropy_task_sets_plt <- time_data %>%
   filter(update %% 1000 == 0) %>%
   ggplot(
@@ -815,7 +815,7 @@ ggsave(
 
 Over time:
 
-```{r}
+```{r, fig.width=10, fig.height=15}
 sym_parent_num_task_sets_plt <- time_data %>%
   # sample to make plotting faster
   filter(update %% 1000 == 0) %>%
@@ -896,7 +896,7 @@ sym_final_num_task_sets_elapsed_plt
 
 Over time:
 
-```{r}
+```{r, fig.width=10, fig.height=15}
 sym_parent_entropy_task_sets_plt <- time_data %>%
   filter(update %% 1000 == 0) %>%
   ggplot(
@@ -975,7 +975,7 @@ Counts of host-symbiont pairs with any trait matches.
 Note that organisms that were just born will not have had time to express any
 Boolean logic functions, so they will appear as not matching.
 
-```{r}
+```{r, fig.width=10, fig.height=15}
 host_sym_any_matches_total_plt <- time_data %>%
   filter(update %% 1000 == 0) %>%
   ggplot(
@@ -1185,7 +1185,7 @@ summary_data %>%
 
 ### Horizontal transmission attempts
 
-```{r}
+```{r, fig.width=10, fig.height=15}
 TransmissionRates_attempts_horiztrans_plt <- time_data %>%
   filter(update %% 1000 == 0) %>%
   ggplot(
@@ -1225,7 +1225,7 @@ TransmissionRates_attempts_horiztrans_plt
 
 ### Horizontal transmission successes
 
-```{r}
+```{r, fig.width=10, fig.height=15}
 TransmissionRates_successes_horiztrans_plt <- time_data %>%
   filter(update %% 1000 == 0) %>%
   ggplot(
@@ -1265,7 +1265,7 @@ TransmissionRates_successes_horiztrans_plt
 
 ### Vertical transmission attempts
 
-```{r}
+```{r, fig.width=10, fig.height=15}
 TransmissionRates_attempts_verttrans_plt <- time_data %>%
   filter(update %% 1000 == 0) %>%
   ggplot(
@@ -1305,7 +1305,7 @@ TransmissionRates_attempts_verttrans_plt
 
 ### Successes vertical transmission
 
-```{r}
+```{r, fig.width=10, fig.height=15}
 TransmissionRates_successes_verttrans_plt <- time_data %>%
   filter(update %% 1000 == 0) %>%
   ggplot(
@@ -1364,7 +1364,7 @@ pop_size_summary <- time_data %>%
 
 ### Host population size
 
-```{r}
+```{r, fig.width=10, fig.height=15}
 host_pop_size_ot_plt <- time_data %>%
   filter(update %% 1000 == 0) %>%
   ggplot(
@@ -1404,7 +1404,7 @@ host_pop_size_ot_plt
 
 ### Symbiont population size
 
-```{r}
+```{r, fig.width=10, fig.height=15}
 sym_pop_size_ot_plt <- time_data %>%
   filter(update %% 1000 == 0) %>%
   ggplot(

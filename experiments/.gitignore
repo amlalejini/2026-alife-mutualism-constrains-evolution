@@ -5,3 +5,5 @@ test/
 tasks_over_time_*.pdf
 
 tar-data/
+
+test.Rmd
