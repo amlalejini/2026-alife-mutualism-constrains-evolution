@@ -1,5 +1,6 @@
 # Mutualism can constrain host diversity and evolution
 
+[![supplemental](https://img.shields.io/badge/go%20to-supplemental%20material-ff69b4)](https://amlalejini.github.io/2026-alife-mutualism-constrains-evolution/web-supplement)
 [![OSF](https://img.shields.io/badge/data%20%40%20OSF-10.17605%2FOSF.IO%2FJ3EZD-blue)](https://osf.io/j3ezd/)
 
 This repository is associated with our 2026 Artificial Life Conference submission, "Mutualism can constrain host diversity and evolution".
