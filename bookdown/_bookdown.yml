@@ -6,5 +6,6 @@ delete_merged_file: true
 rmd_files: ["index.Rmd",
             "../docs/data-availability.md",
             "../docs/compiling-experiment-software.md",
+            "../docs/sgp-virtual-hardware.md",
             "tail.Rmd"
            ]
