@@ -1,0 +1,1 @@
+exclude: ["third-party/", "experiments/", "scripts/", "hpc-env/", "bookdown/"]
