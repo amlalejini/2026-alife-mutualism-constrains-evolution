@@ -25,6 +25,7 @@ bookdown <- exists("bookdown_build")
 # Build relative path from R's working directory to what is actually the working
 # directory for this experiment.
 experiment_slug <- "2025-11-24-health-flat-rewards"
+supp_file_prefix <- "flat-rewards"
 exp_directory <- paste(
   "experiments",
   experiment_slug,
@@ -50,8 +51,6 @@ if (bookdown) {
     supp_directory
   )
 }
-
-supp_file_prefix <- "flat-rewards"
 ```
 
 Define default plot theme, plot output directory.
@@ -1563,4 +1562,6 @@ ggsave(
   width = 3,
   height = 3
 )
+
+manuscript_host_task_complexity_plt
 ```

@@ -356,6 +356,7 @@ Define relevant file paths.
 \CommentTok{\# Build relative path from R\textquotesingle{}s working directory to what is actually the working}
 \CommentTok{\# directory for this experiment.}
 \NormalTok{experiment\_slug }\OtherTok{\textless{}{-}} \StringTok{"2025{-}11{-}24{-}health{-}flat{-}rewards"}
+\NormalTok{supp\_file\_prefix }\OtherTok{\textless{}{-}} \StringTok{"flat{-}rewards"}
 \NormalTok{exp\_directory }\OtherTok{\textless{}{-}} \FunctionTok{paste}\NormalTok{(}
   \StringTok{"experiments"}\NormalTok{,}
 \NormalTok{  experiment\_slug,}
@@ -381,8 +382,6 @@ Define relevant file paths.
 \NormalTok{    supp\_directory}
 \NormalTok{  )}
 \NormalTok{\}}
-
-\NormalTok{supp\_file\_prefix }\OtherTok{\textless{}{-}} \StringTok{"flat{-}rewards"}
 \end{Highlighting}
 \end{Shaded}
 
@@ -2132,6 +2131,2043 @@ Use trait matching metrics to determine if host-symbiont populations are evoluti
   \AttributeTok{plot =}\NormalTok{ manuscript\_host\_task\_complexity\_plt,}
   \AttributeTok{width =} \DecValTok{3}\NormalTok{,}
   \AttributeTok{height =} \DecValTok{3}
+\NormalTok{)}
+
+\NormalTok{manuscript\_host\_task\_complexity\_plt}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{supplemental-material_files/figure-latex/unnamed-chunk-45-1.pdf}
+
+\hypertarget{differential-function-rewards}{%
+\chapter{Differential function rewards}\label{differential-function-rewards}}
+
+Logic functions have rewards proportional to their complexity
+(i.e., the minimum number of nand operations needed to encode them).
+
+Environment configuration:
+
+\begin{verbatim}
+{"name": "NOT", "value": 1, "reward_mode": "add"},
+{"name": "NAND", "value": 1, "reward_mode": "add"},
+{"name": "OR_NOT", "value": 2, "reward_mode": "add"},
+{"name": "AND", "value": 2, "reward_mode": "add"},
+{"name": "OR", "value": 4, "reward_mode": "add"},
+{"name": "AND_NOT", "value": 4, "reward_mode": "add"},
+{"name": "NOR", "value": 8, "reward_mode": "add"},
+{"name": "XOR", "value": 8, "reward_mode": "add"},
+{"name": "EQU", "value": 16, "reward_mode": "add"}
+\end{verbatim}
+
+\hypertarget{dependencies-and-setup-1}{%
+\section{Dependencies and setup}\label{dependencies-and-setup-1}}
+
+Load R library dependencies.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{library}\NormalTok{(tidyverse)}
+\FunctionTok{library}\NormalTok{(cowplot)}
+\FunctionTok{library}\NormalTok{(khroma)}
+\FunctionTok{library}\NormalTok{(rstatix)}
+\FunctionTok{library}\NormalTok{(knitr)}
+\FunctionTok{library}\NormalTok{(kableExtra)}
+\end{Highlighting}
+\end{Shaded}
+
+Define relevant file paths.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Check if Rmd is being compiled using bookdown}
+\NormalTok{bookdown }\OtherTok{\textless{}{-}} \FunctionTok{exists}\NormalTok{(}\StringTok{"bookdown\_build"}\NormalTok{)}
+
+\CommentTok{\# Build relative path from R\textquotesingle{}s working directory to what is actually the working}
+\CommentTok{\# directory for this experiment.}
+\NormalTok{experiment\_slug }\OtherTok{\textless{}{-}} \StringTok{"2025{-}11{-}25{-}health{-}diff{-}rewards"}
+\NormalTok{supp\_file\_prefix }\OtherTok{\textless{}{-}} \StringTok{"diff{-}rewards"}
+\NormalTok{exp\_directory }\OtherTok{\textless{}{-}} \FunctionTok{paste}\NormalTok{(}
+  \StringTok{"experiments"}\NormalTok{,}
+\NormalTok{  experiment\_slug,}
+  \StringTok{"analysis"}\NormalTok{,}
+  \AttributeTok{sep =} \StringTok{"/"}
+\NormalTok{)}
+
+\CommentTok{\# Get path to the supplemental material analysis directory}
+\NormalTok{supp\_directory }\OtherTok{\textless{}{-}} \FunctionTok{paste}\NormalTok{(}
+  \StringTok{"experiments"}\NormalTok{,}
+  \StringTok{"manuscript{-}analyses"}\NormalTok{,}
+  \AttributeTok{sep =} \StringTok{"/"}
+\NormalTok{)}
+
+\CommentTok{\# Adjust experiment directory if being knitted for bookdown build}
+\ControlFlowTok{if}\NormalTok{ (bookdown) \{}
+\NormalTok{  exp\_directory }\OtherTok{\textless{}{-}} \FunctionTok{paste0}\NormalTok{(}
+\NormalTok{    bookdown\_wd\_prefix,}
+\NormalTok{    exp\_directory}
+\NormalTok{  )}
+\NormalTok{  supp\_directory }\OtherTok{\textless{}{-}} \FunctionTok{paste0}\NormalTok{(}
+\NormalTok{    bookdown\_wd\_prefix,}
+\NormalTok{    supp\_directory}
+\NormalTok{  )}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+Define default plot theme, plot output directory.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Use the cowplot theme as our default for ggplots}
+\FunctionTok{theme\_set}\NormalTok{(}\FunctionTok{theme\_cowplot}\NormalTok{())}
+\CommentTok{\# Create directory to save plots}
+\NormalTok{plot\_dir }\OtherTok{\textless{}{-}} \FunctionTok{paste}\NormalTok{(}
+\NormalTok{  supp\_directory,}
+  \StringTok{"plots"}\NormalTok{,}
+\NormalTok{  supp\_file\_prefix,}
+  \AttributeTok{sep =} \StringTok{"/"}
+\NormalTok{)}
+\FunctionTok{dir.create}\NormalTok{(}
+\NormalTok{  plot\_dir,}
+  \AttributeTok{showWarnings =} \ConstantTok{FALSE}
+\NormalTok{)}
+
+\CommentTok{\# Use vibrant theme for plot color palettes}
+\NormalTok{vibrant\_colors }\OtherTok{\textless{}{-}} \FunctionTok{color}\NormalTok{(}\StringTok{"vibrant"}\NormalTok{)(}\DecValTok{7}\NormalTok{)}
+\NormalTok{color\_pal }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}
+\NormalTok{  vibrant\_colors[[}\StringTok{"blue"}\NormalTok{]],}
+\NormalTok{  vibrant\_colors[[}\StringTok{"orange"}\NormalTok{]],}
+\NormalTok{  vibrant\_colors[[}\StringTok{"magenta"}\NormalTok{]]}
+\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{load-and-preprocess-data-1}{%
+\section{Load and preprocess data}\label{load-and-preprocess-data-1}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{tasks }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\StringTok{"NOT"}\NormalTok{, }\StringTok{"NAND"}\NormalTok{, }\StringTok{"OR\_NOT"}\NormalTok{, }\StringTok{"AND"}\NormalTok{, }\StringTok{"OR"}\NormalTok{, }\StringTok{"AND\_NOT"}\NormalTok{, }\StringTok{"NOR"}\NormalTok{, }\StringTok{"XOR"}\NormalTok{, }\StringTok{"EQU"}\NormalTok{)}
+\NormalTok{max\_pop\_size }\OtherTok{\textless{}{-}} \DecValTok{100} \SpecialCharTok{*} \DecValTok{100}
+\NormalTok{threshold }\OtherTok{\textless{}{-}} \FloatTok{0.025} \SpecialCharTok{*}\NormalTok{ max\_pop\_size}
+\end{Highlighting}
+\end{Shaded}
+
+Load summary data.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{summary\_data\_path }\OtherTok{\textless{}{-}} \FunctionTok{paste}\NormalTok{(}
+\NormalTok{  exp\_directory,}
+  \StringTok{"data"}\NormalTok{,}
+  \StringTok{"summary.csv"}\NormalTok{,}
+  \AttributeTok{sep =} \StringTok{"/"}
+\NormalTok{)}
+\NormalTok{summary\_data }\OtherTok{\textless{}{-}} \FunctionTok{read\_csv}\NormalTok{(summary\_data\_path)}
+\CommentTok{\# Do any universal preprocessing}
+\NormalTok{summary\_data }\OtherTok{\textless{}{-}}\NormalTok{ summary\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}
+    \AttributeTok{SEED =} \FunctionTok{as.factor}\NormalTok{(SEED),}
+    \AttributeTok{task\_credit =} \FunctionTok{paste0}\NormalTok{(}
+      \StringTok{"H"}\NormalTok{, HOST\_ONLY\_FIRST\_TASK\_CREDIT,}
+      \StringTok{"S"}\NormalTok{, SYM\_ONLY\_FIRST\_TASK\_CREDIT}
+\NormalTok{    ),}
+    \AttributeTok{sym\_condition =} \FunctionTok{case\_when}\NormalTok{(}
+\NormalTok{      START\_MOI }\SpecialCharTok{==} \StringTok{"0"} \SpecialCharTok{\textasciitilde{}} \StringTok{"no{-}syms"}\NormalTok{,}
+\NormalTok{      START\_MOI }\SpecialCharTok{==} \StringTok{"1"} \SpecialCharTok{\&}\NormalTok{ HEALTH\_TYPE }\SpecialCharTok{==} \StringTok{"parasite"} \SpecialCharTok{\textasciitilde{}} \StringTok{"parasite"}\NormalTok{,}
+\NormalTok{      START\_MOI }\SpecialCharTok{==} \StringTok{"1"} \SpecialCharTok{\&}\NormalTok{ HEALTH\_TYPE }\SpecialCharTok{==} \StringTok{"mutualist"} \SpecialCharTok{\textasciitilde{}} \StringTok{"mutualist"}\NormalTok{,}
+      \AttributeTok{.default =} \StringTok{"unknown"} \CommentTok{\# precaution against unexpected parameterizations}
+\NormalTok{    ),}
+    \AttributeTok{interaction\_multiplier =} \FunctionTok{as.factor}\NormalTok{(PARASITE\_CYCLE\_STEAL\_MULTIPLIER)}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}
+    \AttributeTok{task\_credit =} \FunctionTok{as.factor}\NormalTok{(task\_credit),}
+    \AttributeTok{sym\_condition =} \FunctionTok{factor}\NormalTok{(}
+\NormalTok{      sym\_condition,}
+      \AttributeTok{levels =} \FunctionTok{c}\NormalTok{(}\StringTok{"no{-}syms"}\NormalTok{, }\StringTok{"parasite"}\NormalTok{, }\StringTok{"mutualist"}\NormalTok{)}
+\NormalTok{    )}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \CommentTok{\# Filter to just IM=4 data =\textgreater{} that\textquotesingle{}s our baseline in the paper.}
+  \FunctionTok{filter}\NormalTok{(interaction\_multiplier }\SpecialCharTok{==} \StringTok{"4"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+Load time series data.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{time\_data\_path }\OtherTok{\textless{}{-}} \FunctionTok{paste}\NormalTok{(}
+\NormalTok{  exp\_directory,}
+  \StringTok{"data"}\NormalTok{,}
+  \StringTok{"time\_series.csv"}\NormalTok{,}
+  \AttributeTok{sep =} \StringTok{"/"}
+\NormalTok{)}
+\NormalTok{time\_data }\OtherTok{\textless{}{-}} \FunctionTok{read\_csv}\NormalTok{(time\_data\_path)}
+
+\CommentTok{\# Do any universal preprocessing}
+\NormalTok{time\_data }\OtherTok{\textless{}{-}}\NormalTok{ time\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}
+    \AttributeTok{SEED =} \FunctionTok{as.factor}\NormalTok{(SEED),}
+    \AttributeTok{sym\_condition =} \FunctionTok{case\_when}\NormalTok{(}
+\NormalTok{      START\_MOI }\SpecialCharTok{==} \StringTok{"0"} \SpecialCharTok{\textasciitilde{}} \StringTok{"no{-}syms"}\NormalTok{,}
+\NormalTok{      START\_MOI }\SpecialCharTok{==} \StringTok{"1"} \SpecialCharTok{\&}\NormalTok{ HEALTH\_TYPE }\SpecialCharTok{==} \StringTok{"parasite"} \SpecialCharTok{\textasciitilde{}} \StringTok{"parasite"}\NormalTok{,}
+\NormalTok{      START\_MOI }\SpecialCharTok{==} \StringTok{"1"} \SpecialCharTok{\&}\NormalTok{ HEALTH\_TYPE }\SpecialCharTok{==} \StringTok{"mutualist"} \SpecialCharTok{\textasciitilde{}} \StringTok{"mutualist"}\NormalTok{,}
+      \AttributeTok{.default =} \StringTok{"unknown"} \CommentTok{\# precaution against unexpected parameterizations}
+\NormalTok{    ),}
+    \AttributeTok{interaction\_multiplier =} \FunctionTok{as.factor}\NormalTok{(PARASITE\_CYCLE\_STEAL\_MULTIPLIER)}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}
+    \AttributeTok{sym\_condition =} \FunctionTok{factor}\NormalTok{(}
+\NormalTok{      sym\_condition,}
+      \AttributeTok{levels =} \FunctionTok{c}\NormalTok{(}\StringTok{"no{-}syms"}\NormalTok{, }\StringTok{"parasite"}\NormalTok{, }\StringTok{"mutualist"}\NormalTok{)}
+\NormalTok{    )}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \CommentTok{\# Filter to just IM=4 data =\textgreater{} that\textquotesingle{}s our baseline in the paper.}
+  \FunctionTok{filter}\NormalTok{(interaction\_multiplier }\SpecialCharTok{==} \StringTok{"4"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{extinctions-1}{%
+\section{Extinctions}\label{extinctions-1}}
+
+Did host or symbiont populations go extinct in any runs?
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{sym\_min\_pop\_sizes }\OtherTok{\textless{}{-}}\NormalTok{ time\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{group\_by}\NormalTok{(SEED) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{slice\_min}\NormalTok{(}
+\NormalTok{    OrgCounts\_hosted\_sym\_count,}
+    \AttributeTok{n =} \DecValTok{1}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{slice\_min}\NormalTok{(}
+\NormalTok{    update,}
+    \AttributeTok{n =} \DecValTok{1}
+\NormalTok{  )}
+
+\NormalTok{reps\_with\_extinct\_syms }\OtherTok{\textless{}{-}}\NormalTok{ sym\_min\_pop\_sizes }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{group\_by}\NormalTok{(}
+\NormalTok{    sym\_condition}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{summarize}\NormalTok{(}
+    \AttributeTok{reps\_with\_extinct\_syms =} \FunctionTok{sum}\NormalTok{(OrgCounts\_hosted\_sym\_count }\SpecialCharTok{==} \DecValTok{0}\NormalTok{),}
+    \AttributeTok{total\_reps =} \FunctionTok{n}\NormalTok{()}
+\NormalTok{  )}
+
+\NormalTok{host\_min\_pop\_sizes }\OtherTok{\textless{}{-}}\NormalTok{ time\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{group\_by}\NormalTok{(SEED) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{slice\_min}\NormalTok{(}
+\NormalTok{    OrgCounts\_host\_count,}
+    \AttributeTok{n =} \DecValTok{1}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{slice\_min}\NormalTok{(}
+\NormalTok{    update,}
+    \AttributeTok{n =} \DecValTok{1}
+\NormalTok{  )}
+
+\NormalTok{reps\_with\_extinct\_hosts }\OtherTok{\textless{}{-}}\NormalTok{ host\_min\_pop\_sizes }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{group\_by}\NormalTok{(}
+\NormalTok{    sym\_condition}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{summarize}\NormalTok{(}
+    \AttributeTok{reps\_with\_extinct\_hosts =} \FunctionTok{sum}\NormalTok{(OrgCounts\_host\_count }\SpecialCharTok{==} \DecValTok{0}\NormalTok{),}
+    \AttributeTok{total\_reps =} \FunctionTok{n}\NormalTok{()}
+\NormalTok{  )}
+
+\NormalTok{extinctions }\OtherTok{\textless{}{-}} \FunctionTok{full\_join}\NormalTok{(}
+\NormalTok{  reps\_with\_extinct\_syms,}
+\NormalTok{  reps\_with\_extinct\_hosts}
+\NormalTok{)}
+\NormalTok{extinctions }\OtherTok{\textless{}{-}}\NormalTok{ extinctions }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{arrange}\NormalTok{(}
+    \FunctionTok{desc}\NormalTok{(reps\_with\_extinct\_hosts), }\FunctionTok{desc}\NormalTok{(reps\_with\_extinct\_syms)}
+\NormalTok{  )}
+\NormalTok{extinction\_table }\OtherTok{\textless{}{-}} \FunctionTok{kable}\NormalTok{(extinctions) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{kable\_styling}\NormalTok{(}\AttributeTok{latex\_options =} \StringTok{"striped"}\NormalTok{)}
+\FunctionTok{save\_kable}\NormalTok{(}
+\NormalTok{  extinction\_table,}
+  \FunctionTok{paste}\NormalTok{(}
+\NormalTok{    plot\_dir,}
+    \StringTok{"extinctions.pdf"}\NormalTok{,}
+    \AttributeTok{sep =} \StringTok{"/"}
+\NormalTok{  )}
+\NormalTok{)}
+
+\NormalTok{extinctions}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 3 x 4
+##   sym_condition reps_with_extinct_syms total_reps reps_with_extinct_hosts
+##   <fct>                          <int>      <int>                   <int>
+## 1 no-syms                           50         50                       0
+## 2 parasite                          36         50                       0
+## 3 mutualist                          0         50                       0
+\end{verbatim}
+
+\hypertarget{host-function-performance-1}{%
+\section{Host function performance}\label{host-function-performance-1}}
+
+First, quantify which functions have been performed over the course of an entire run.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Pivot task data long, selecting only relevant columns}
+\NormalTok{host\_over\_time\_parent\_task\_data }\OtherTok{\textless{}{-}}\NormalTok{ time\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{select}\NormalTok{(}
+\NormalTok{    SEED,}
+\NormalTok{    sym\_condition,}
+\NormalTok{    interaction\_multiplier,}
+\NormalTok{    update,}
+\NormalTok{    CurUpdate\_AND\_NOT\_in\_host\_parent\_org\_counts,}
+\NormalTok{    CurUpdate\_AND\_in\_host\_parent\_org\_counts,}
+\NormalTok{    CurUpdate\_EQU\_in\_host\_parent\_org\_counts,}
+\NormalTok{    CurUpdate\_NAND\_in\_host\_parent\_org\_counts,}
+\NormalTok{    CurUpdate\_NOR\_in\_host\_parent\_org\_counts,}
+\NormalTok{    CurUpdate\_NOT\_in\_host\_parent\_org\_counts,}
+\NormalTok{    CurUpdate\_OR\_NOT\_in\_host\_parent\_org\_counts,}
+\NormalTok{    CurUpdate\_OR\_in\_host\_parent\_org\_counts,}
+\NormalTok{    CurUpdate\_XOR\_in\_host\_parent\_org\_counts}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{pivot\_longer}\NormalTok{(}
+    \FunctionTok{c}\NormalTok{(}
+\NormalTok{      CurUpdate\_AND\_NOT\_in\_host\_parent\_org\_counts,}
+\NormalTok{      CurUpdate\_AND\_in\_host\_parent\_org\_counts,}
+\NormalTok{      CurUpdate\_EQU\_in\_host\_parent\_org\_counts,}
+\NormalTok{      CurUpdate\_NAND\_in\_host\_parent\_org\_counts,}
+\NormalTok{      CurUpdate\_NOR\_in\_host\_parent\_org\_counts,}
+\NormalTok{      CurUpdate\_NOT\_in\_host\_parent\_org\_counts,}
+\NormalTok{      CurUpdate\_OR\_NOT\_in\_host\_parent\_org\_counts,}
+\NormalTok{      CurUpdate\_OR\_in\_host\_parent\_org\_counts,}
+\NormalTok{      CurUpdate\_XOR\_in\_host\_parent\_org\_counts}
+\NormalTok{    ),}
+    \AttributeTok{names\_to =} \StringTok{"task"}\NormalTok{,}
+    \AttributeTok{values\_to =} \StringTok{"task\_in\_parent\_count"}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}
+    \AttributeTok{task =} \FunctionTok{str\_replace}\NormalTok{(task, }\StringTok{"CurUpdate\_"}\NormalTok{, }\StringTok{""}\NormalTok{)}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}
+    \AttributeTok{task =} \FunctionTok{str\_replace}\NormalTok{(task, }\StringTok{"\_in\_host\_parent\_org\_counts"}\NormalTok{, }\StringTok{""}\NormalTok{)}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}
+    \AttributeTok{task\_completed\_by\_parent =}\NormalTok{ task\_in\_parent\_count }\SpecialCharTok{\textgreater{}=}\NormalTok{ threshold,}
+    \AttributeTok{task =} \FunctionTok{factor}\NormalTok{(}
+\NormalTok{      task,}
+      \AttributeTok{levels =}\NormalTok{ tasks,}
+      \AttributeTok{labels =}\NormalTok{ tasks}
+\NormalTok{    )}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}
+    \AttributeTok{task\_complexity =} \FunctionTok{case\_when}\NormalTok{(}
+\NormalTok{      task }\SpecialCharTok{==} \StringTok{"NOT"} \SpecialCharTok{\textasciitilde{}} \DecValTok{1}\NormalTok{,}
+\NormalTok{      task }\SpecialCharTok{==} \StringTok{"NAND"} \SpecialCharTok{\textasciitilde{}} \DecValTok{1}\NormalTok{,}
+\NormalTok{      task }\SpecialCharTok{==} \StringTok{"OR\_NOT"} \SpecialCharTok{\textasciitilde{}} \DecValTok{2}\NormalTok{,}
+\NormalTok{      task }\SpecialCharTok{==} \StringTok{"AND"} \SpecialCharTok{\textasciitilde{}} \DecValTok{2}\NormalTok{,}
+\NormalTok{      task }\SpecialCharTok{==} \StringTok{"OR"} \SpecialCharTok{\textasciitilde{}} \DecValTok{3}\NormalTok{,}
+\NormalTok{      task }\SpecialCharTok{==} \StringTok{"AND\_NOT"} \SpecialCharTok{\textasciitilde{}} \DecValTok{3}\NormalTok{,}
+\NormalTok{      task }\SpecialCharTok{==} \StringTok{"NOR"} \SpecialCharTok{\textasciitilde{}} \DecValTok{4}\NormalTok{,}
+\NormalTok{      task }\SpecialCharTok{==} \StringTok{"XOR"} \SpecialCharTok{\textasciitilde{}} \DecValTok{4}\NormalTok{,}
+\NormalTok{      task }\SpecialCharTok{==} \StringTok{"EQU"} \SpecialCharTok{\textasciitilde{}} \DecValTok{5}\NormalTok{,}
+      \AttributeTok{.default =} \SpecialCharTok{{-}}\DecValTok{1}
+\NormalTok{    )}
+\NormalTok{  )}
+
+\NormalTok{host\_parent\_tasks\_all\_time\_by\_task }\OtherTok{\textless{}{-}}\NormalTok{ host\_over\_time\_parent\_task\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{group\_by}\NormalTok{(}
+\NormalTok{    SEED,}
+\NormalTok{    sym\_condition,}
+\NormalTok{    interaction\_multiplier,}
+\NormalTok{    task}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{summarize}\NormalTok{(}
+    \AttributeTok{n =} \FunctionTok{n}\NormalTok{(),}
+    \AttributeTok{parent\_task\_completed\_ever =} \FunctionTok{any}\NormalTok{(task\_completed\_by\_parent)}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{ungroup}\NormalTok{() }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{group\_by}\NormalTok{(}
+\NormalTok{    sym\_condition,}
+\NormalTok{    interaction\_multiplier,}
+\NormalTok{    task}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{summarize}\NormalTok{(}
+    \AttributeTok{n =} \FunctionTok{n}\NormalTok{(),}
+    \AttributeTok{parent\_tasks\_completed\_ever =} \FunctionTok{sum}\NormalTok{(parent\_task\_completed\_ever }\SpecialCharTok{==} \ConstantTok{TRUE}\NormalTok{)}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+Next, summarize function complexity level.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{host\_max\_task\_complexity\_data }\OtherTok{\textless{}{-}}\NormalTok{ host\_over\_time\_parent\_task\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{group\_by}\NormalTok{(}
+\NormalTok{    SEED,}
+\NormalTok{    sym\_condition,}
+\NormalTok{    interaction\_multiplier,}
+\NormalTok{    task,}
+\NormalTok{    task\_complexity}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{summarize}\NormalTok{(}
+    \AttributeTok{n =} \FunctionTok{n}\NormalTok{(),}
+    \AttributeTok{parent\_task\_completed\_ever =} \FunctionTok{any}\NormalTok{(task\_completed\_by\_parent)}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{ungroup}\NormalTok{() }\SpecialCharTok{\%\textgreater{}\%}
+  \CommentTok{\# This filter works fine because all replicates start with a task}
+  \FunctionTok{filter}\NormalTok{(}
+\NormalTok{    parent\_task\_completed\_ever}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{group\_by}\NormalTok{(}
+\NormalTok{    SEED,}
+\NormalTok{    sym\_condition,}
+\NormalTok{    interaction\_multiplier}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{summarize}\NormalTok{(}
+    \AttributeTok{max\_task\_complexity =} \FunctionTok{max}\NormalTok{(task\_complexity)}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}
+    \AttributeTok{sym\_condition =} \FunctionTok{factor}\NormalTok{(}
+\NormalTok{      sym\_condition,}
+      \AttributeTok{levels =} \FunctionTok{c}\NormalTok{(}
+        \StringTok{"no{-}syms"}\NormalTok{,}
+        \StringTok{"parasite"}\NormalTok{,}
+        \StringTok{"mutualist"}
+\NormalTok{      )}
+\NormalTok{    )}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{host-function-performance---all-time-1}{%
+\subsection{Host function performance - all time}\label{host-function-performance---all-time-1}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{host\_parent\_tasks\_all\_time\_by\_task\_plt }\OtherTok{\textless{}{-}}\NormalTok{ host\_parent\_tasks\_all\_time\_by\_task }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{ggplot}\NormalTok{(}
+    \FunctionTok{aes}\NormalTok{(}
+      \AttributeTok{x =}\NormalTok{ task,}
+      \AttributeTok{color =}\NormalTok{ sym\_condition,}
+      \AttributeTok{fill =}\NormalTok{ sym\_condition,}
+      \AttributeTok{y =}\NormalTok{ parent\_tasks\_completed\_ever}
+\NormalTok{    )}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{geom\_col}\NormalTok{(}
+    \AttributeTok{position =} \StringTok{"dodge"}\NormalTok{,}
+    \AttributeTok{alpha =} \FloatTok{0.5}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{geom\_text}\NormalTok{(}
+    \FunctionTok{aes}\NormalTok{(}\AttributeTok{label =}\NormalTok{ parent\_tasks\_completed\_ever),}
+    \AttributeTok{position =} \FunctionTok{position\_dodge}\NormalTok{(}\AttributeTok{width =} \DecValTok{1}\NormalTok{),}
+    \AttributeTok{vjust =} \SpecialCharTok{{-}}\FloatTok{0.5}\NormalTok{,}
+    \AttributeTok{size =} \DecValTok{2}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{scale\_color\_manual}\NormalTok{(}\AttributeTok{values =}\NormalTok{ color\_pal) }\SpecialCharTok{+}
+  \FunctionTok{scale\_fill\_manual}\NormalTok{(}\AttributeTok{values =}\NormalTok{ color\_pal) }\SpecialCharTok{+}
+  \FunctionTok{scale\_x\_discrete}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{scale\_y\_continuous}\NormalTok{(}
+    \AttributeTok{limits =} \FunctionTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{, }\DecValTok{51}\NormalTok{)}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{theme}\NormalTok{(}
+    \AttributeTok{legend.position =} \StringTok{"bottom"}\NormalTok{,}
+    \AttributeTok{axis.text.x =} \FunctionTok{element\_text}\NormalTok{(}
+      \AttributeTok{angle =} \DecValTok{90}\NormalTok{,}
+      \AttributeTok{hjust =} \DecValTok{1}
+\NormalTok{    )}
+\NormalTok{  )}
+\FunctionTok{ggsave}\NormalTok{(}
+  \AttributeTok{file =} \FunctionTok{paste}\NormalTok{(}
+\NormalTok{    plot\_dir,}
+    \StringTok{"host\_parent\_tasks\_all\_time\_by\_task\_plt.pdf"}\NormalTok{,}
+    \AttributeTok{sep =} \StringTok{"/"}
+\NormalTok{  ),}
+  \AttributeTok{plot =}\NormalTok{ host\_parent\_tasks\_all\_time\_by\_task\_plt,}
+  \AttributeTok{width =} \DecValTok{8}\NormalTok{,}
+  \AttributeTok{height =} \DecValTok{8}
+\NormalTok{)}
+\NormalTok{host\_parent\_tasks\_all\_time\_by\_task\_plt}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{supplemental-material_files/figure-latex/unnamed-chunk-55-1.pdf}
+
+\hypertarget{host-maximum-function-complexity-evolved-1}{%
+\subsection{Host maximum function complexity evolved}\label{host-maximum-function-complexity-evolved-1}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{host\_max\_task\_complexity\_plt }\OtherTok{\textless{}{-}}\NormalTok{ host\_max\_task\_complexity\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{ggplot}\NormalTok{(}
+    \FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ sym\_condition, }\AttributeTok{fill =}\NormalTok{ sym\_condition, }\AttributeTok{y =}\NormalTok{ max\_task\_complexity)}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{geom\_point}\NormalTok{(}
+    \AttributeTok{mapping=}\FunctionTok{aes}\NormalTok{(}\AttributeTok{color =}\NormalTok{ sym\_condition),}
+    \AttributeTok{position =} \FunctionTok{position\_jitter}\NormalTok{(}\AttributeTok{width =}\NormalTok{ .}\DecValTok{15}\NormalTok{),}
+    \AttributeTok{size =}\NormalTok{ .}\DecValTok{5}\NormalTok{,}
+    \AttributeTok{alpha =} \FloatTok{0.8}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{geom\_boxplot}\NormalTok{(}
+    \AttributeTok{width =}\NormalTok{ .}\DecValTok{1}\NormalTok{,}
+    \AttributeTok{outlier.shape =} \ConstantTok{NA}\NormalTok{,}
+    \AttributeTok{alpha =} \FloatTok{0.5}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{scale\_x\_discrete}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{scale\_color\_manual}\NormalTok{(}\AttributeTok{values =}\NormalTok{ color\_pal) }\SpecialCharTok{+}
+  \FunctionTok{scale\_fill\_manual}\NormalTok{(}\AttributeTok{values =}\NormalTok{ color\_pal) }\SpecialCharTok{+}
+  \FunctionTok{theme}\NormalTok{(}
+    \AttributeTok{legend.position =} \StringTok{"none"}\NormalTok{,}
+    \AttributeTok{axis.text.x =} \FunctionTok{element\_text}\NormalTok{(}
+      \AttributeTok{angle =} \DecValTok{60}\NormalTok{,}
+      \AttributeTok{hjust =} \DecValTok{1}
+\NormalTok{    )}
+\NormalTok{  )}
+\FunctionTok{ggsave}\NormalTok{(}
+  \AttributeTok{file =} \FunctionTok{paste}\NormalTok{(plot\_dir, }\StringTok{"host\_max\_task\_complexity\_plt.pdf"}\NormalTok{, }\AttributeTok{sep =} \StringTok{"/"}\NormalTok{),}
+  \AttributeTok{plot =}\NormalTok{ host\_max\_task\_complexity\_plt,}
+  \AttributeTok{width =} \DecValTok{4}\NormalTok{,}
+  \AttributeTok{height =} \DecValTok{4}
+\NormalTok{)}
+\NormalTok{host\_max\_task\_complexity\_plt}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{supplemental-material_files/figure-latex/unnamed-chunk-56-1.pdf}
+
+Kruskal-Wallis test to check significance among distribution differences.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{kw\_test }\OtherTok{\textless{}{-}}\NormalTok{ host\_max\_task\_complexity\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{group\_by}\NormalTok{(interaction\_multiplier) }\SpecialCharTok{\%\textgreater{}\%}
+\NormalTok{  rstatix}\SpecialCharTok{::}\FunctionTok{kruskal\_test}\NormalTok{(max\_task\_complexity }\SpecialCharTok{\textasciitilde{}}\NormalTok{ sym\_condition)}
+\NormalTok{kw\_test}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 1 x 7
+##   interaction_multiplier .y.                   n statistic    df        p method
+## * <fct>                  <chr>             <int>     <dbl> <int>    <dbl> <chr> 
+## 1 4                      max_task_complex~   150      130.     2 5.68e-29 Krusk~
+\end{verbatim}
+
+Kruskal-Wallis test is significant, so we run Bonferroni-corrected pairwise Wilcoxon rank-sum tests to determine significant differences between pairs of treatments.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{pairwise.wilcox.test}\NormalTok{(}
+  \AttributeTok{x =}\NormalTok{ host\_max\_task\_complexity\_data}\SpecialCharTok{$}\NormalTok{max\_task\_complexity,}
+  \AttributeTok{g =}\NormalTok{ host\_max\_task\_complexity\_data}\SpecialCharTok{$}\NormalTok{sym\_condition,}
+  \AttributeTok{p.adjust.method =} \StringTok{"bonferroni"}\NormalTok{,}
+  \AttributeTok{exact =} \ConstantTok{FALSE}
+\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+##  Pairwise comparisons using Wilcoxon rank sum test with continuity correction 
+## 
+## data:  host_max_task_complexity_data$max_task_complexity and host_max_task_complexity_data$sym_condition 
+## 
+##           no-syms parasite
+## parasite  0.019   -       
+## mutualist <2e-16  <2e-16  
+## 
+## P value adjustment method: bonferroni
+\end{verbatim}
+
+\hypertarget{symbiont-function-performance-1}{%
+\section{Symbiont function performance}\label{symbiont-function-performance-1}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Pivot task data long, selecting only relevant columns}
+\NormalTok{sym\_over\_time\_parent\_task\_data }\OtherTok{\textless{}{-}}\NormalTok{ time\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{select}\NormalTok{(}
+\NormalTok{    SEED,}
+\NormalTok{    sym\_condition,}
+\NormalTok{    interaction\_multiplier,}
+\NormalTok{    update,}
+\NormalTok{    CurUpdate\_AND\_NOT\_in\_sym\_parent\_org\_counts,}
+\NormalTok{    CurUpdate\_AND\_in\_sym\_parent\_org\_counts,}
+\NormalTok{    CurUpdate\_EQU\_in\_sym\_parent\_org\_counts,}
+\NormalTok{    CurUpdate\_NAND\_in\_sym\_parent\_org\_counts,}
+\NormalTok{    CurUpdate\_NOR\_in\_sym\_parent\_org\_counts,}
+\NormalTok{    CurUpdate\_NOT\_in\_sym\_parent\_org\_counts,}
+\NormalTok{    CurUpdate\_OR\_NOT\_in\_sym\_parent\_org\_counts,}
+\NormalTok{    CurUpdate\_OR\_in\_sym\_parent\_org\_counts,}
+\NormalTok{    CurUpdate\_XOR\_in\_sym\_parent\_org\_counts}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{pivot\_longer}\NormalTok{(}
+    \FunctionTok{c}\NormalTok{(}
+\NormalTok{      CurUpdate\_AND\_NOT\_in\_sym\_parent\_org\_counts,}
+\NormalTok{      CurUpdate\_AND\_in\_sym\_parent\_org\_counts,}
+\NormalTok{      CurUpdate\_EQU\_in\_sym\_parent\_org\_counts,}
+\NormalTok{      CurUpdate\_NAND\_in\_sym\_parent\_org\_counts,}
+\NormalTok{      CurUpdate\_NOR\_in\_sym\_parent\_org\_counts,}
+\NormalTok{      CurUpdate\_NOT\_in\_sym\_parent\_org\_counts,}
+\NormalTok{      CurUpdate\_OR\_NOT\_in\_sym\_parent\_org\_counts,}
+\NormalTok{      CurUpdate\_OR\_in\_sym\_parent\_org\_counts,}
+\NormalTok{      CurUpdate\_XOR\_in\_sym\_parent\_org\_counts}
+\NormalTok{    ),}
+    \AttributeTok{names\_to =} \StringTok{"task"}\NormalTok{,}
+    \AttributeTok{values\_to =} \StringTok{"task\_in\_parent\_count"}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}
+    \AttributeTok{task =} \FunctionTok{str\_replace}\NormalTok{(task, }\StringTok{"CurUpdate\_"}\NormalTok{, }\StringTok{""}\NormalTok{)}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}
+    \AttributeTok{task =} \FunctionTok{str\_replace}\NormalTok{(task, }\StringTok{"\_in\_sym\_parent\_org\_counts"}\NormalTok{, }\StringTok{""}\NormalTok{)}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}
+    \AttributeTok{task\_completed\_by\_parent =}\NormalTok{ task\_in\_parent\_count }\SpecialCharTok{\textgreater{}=}\NormalTok{ threshold,}
+    \AttributeTok{task =} \FunctionTok{factor}\NormalTok{(}
+\NormalTok{      task,}
+      \AttributeTok{levels =}\NormalTok{ tasks,}
+      \AttributeTok{labels =}\NormalTok{ tasks}
+\NormalTok{    )}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}
+    \AttributeTok{task\_complexity =} \FunctionTok{case\_when}\NormalTok{(}
+\NormalTok{      task }\SpecialCharTok{==} \StringTok{"NOT"} \SpecialCharTok{\textasciitilde{}} \DecValTok{1}\NormalTok{,}
+\NormalTok{      task }\SpecialCharTok{==} \StringTok{"NAND"} \SpecialCharTok{\textasciitilde{}} \DecValTok{1}\NormalTok{,}
+\NormalTok{      task }\SpecialCharTok{==} \StringTok{"OR\_NOT"} \SpecialCharTok{\textasciitilde{}} \DecValTok{2}\NormalTok{,}
+\NormalTok{      task }\SpecialCharTok{==} \StringTok{"AND"} \SpecialCharTok{\textasciitilde{}} \DecValTok{2}\NormalTok{,}
+\NormalTok{      task }\SpecialCharTok{==} \StringTok{"OR"} \SpecialCharTok{\textasciitilde{}} \DecValTok{3}\NormalTok{,}
+\NormalTok{      task }\SpecialCharTok{==} \StringTok{"AND\_NOT"} \SpecialCharTok{\textasciitilde{}} \DecValTok{3}\NormalTok{,}
+\NormalTok{      task }\SpecialCharTok{==} \StringTok{"NOR"} \SpecialCharTok{\textasciitilde{}} \DecValTok{4}\NormalTok{,}
+\NormalTok{      task }\SpecialCharTok{==} \StringTok{"XOR"} \SpecialCharTok{\textasciitilde{}} \DecValTok{4}\NormalTok{,}
+\NormalTok{      task }\SpecialCharTok{==} \StringTok{"EQU"} \SpecialCharTok{\textasciitilde{}} \DecValTok{5}\NormalTok{,}
+      \AttributeTok{.default =} \SpecialCharTok{{-}}\DecValTok{1}
+\NormalTok{    )}
+\NormalTok{  )}
+
+\NormalTok{sym\_parent\_tasks\_all\_time\_by\_task }\OtherTok{\textless{}{-}}\NormalTok{ sym\_over\_time\_parent\_task\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{group\_by}\NormalTok{(}
+\NormalTok{    SEED,}
+\NormalTok{    sym\_condition,}
+\NormalTok{    interaction\_multiplier,}
+\NormalTok{    task}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{summarize}\NormalTok{(}
+    \AttributeTok{n =} \FunctionTok{n}\NormalTok{(),}
+    \AttributeTok{parent\_task\_completed\_ever =} \FunctionTok{any}\NormalTok{(task\_completed\_by\_parent)}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{ungroup}\NormalTok{() }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{group\_by}\NormalTok{(}
+\NormalTok{    sym\_condition,}
+\NormalTok{    interaction\_multiplier,}
+\NormalTok{    task}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{summarize}\NormalTok{(}
+    \AttributeTok{n =} \FunctionTok{n}\NormalTok{(),}
+    \AttributeTok{parent\_tasks\_completed\_ever =} \FunctionTok{sum}\NormalTok{(parent\_task\_completed\_ever }\SpecialCharTok{==} \ConstantTok{TRUE}\NormalTok{)}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+Next, summarize function complexity level.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{sym\_max\_task\_complexity\_data }\OtherTok{\textless{}{-}}\NormalTok{ sym\_over\_time\_parent\_task\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{group\_by}\NormalTok{(}
+\NormalTok{    SEED,}
+\NormalTok{    sym\_condition,}
+\NormalTok{    interaction\_multiplier,}
+\NormalTok{    task,}
+\NormalTok{    task\_complexity}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{summarize}\NormalTok{(}
+    \AttributeTok{n =} \FunctionTok{n}\NormalTok{(),}
+    \AttributeTok{parent\_task\_completed\_ever =} \FunctionTok{any}\NormalTok{(task\_completed\_by\_parent)}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{ungroup}\NormalTok{() }\SpecialCharTok{\%\textgreater{}\%}
+  \CommentTok{\# This filter works fine because all replicates start with a task}
+  \FunctionTok{filter}\NormalTok{(}
+\NormalTok{    parent\_task\_completed\_ever}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{group\_by}\NormalTok{(}
+\NormalTok{    SEED,}
+\NormalTok{    sym\_condition,}
+\NormalTok{    interaction\_multiplier}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{summarize}\NormalTok{(}
+    \AttributeTok{max\_task\_complexity =} \FunctionTok{max}\NormalTok{(task\_complexity)}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}
+    \AttributeTok{sym\_condition =} \FunctionTok{factor}\NormalTok{(}
+\NormalTok{      sym\_condition,}
+      \AttributeTok{levels =} \FunctionTok{c}\NormalTok{(}
+        \StringTok{"no{-}syms"}\NormalTok{,}
+        \StringTok{"parasite"}\NormalTok{,}
+        \StringTok{"mutualist"}
+\NormalTok{      )}
+\NormalTok{    )}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{symbiont-function-performance---all-time-1}{%
+\subsection{Symbiont function performance - all time}\label{symbiont-function-performance---all-time-1}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{sym\_parent\_tasks\_all\_time\_by\_task\_plt }\OtherTok{\textless{}{-}}\NormalTok{ sym\_parent\_tasks\_all\_time\_by\_task }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{ggplot}\NormalTok{(}
+    \FunctionTok{aes}\NormalTok{(}
+      \AttributeTok{x =}\NormalTok{ task,}
+      \AttributeTok{color =}\NormalTok{ sym\_condition,}
+      \AttributeTok{fill =}\NormalTok{ sym\_condition,}
+      \AttributeTok{y =}\NormalTok{ parent\_tasks\_completed\_ever}
+\NormalTok{    )}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{geom\_col}\NormalTok{(}
+    \AttributeTok{position =} \StringTok{"dodge"}\NormalTok{,}
+    \AttributeTok{alpha =} \FloatTok{0.5}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{geom\_text}\NormalTok{(}
+    \FunctionTok{aes}\NormalTok{(}\AttributeTok{label =}\NormalTok{ parent\_tasks\_completed\_ever),}
+    \AttributeTok{position =} \FunctionTok{position\_dodge}\NormalTok{(}\AttributeTok{width =} \DecValTok{1}\NormalTok{),}
+    \AttributeTok{vjust =} \SpecialCharTok{{-}}\FloatTok{0.5}\NormalTok{,}
+    \AttributeTok{size =} \DecValTok{2}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{scale\_color\_manual}\NormalTok{(}\AttributeTok{values =}\NormalTok{ color\_pal) }\SpecialCharTok{+}
+  \FunctionTok{scale\_fill\_manual}\NormalTok{(}\AttributeTok{values =}\NormalTok{ color\_pal) }\SpecialCharTok{+}
+  \FunctionTok{scale\_x\_discrete}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{scale\_y\_continuous}\NormalTok{(}
+    \AttributeTok{limits =} \FunctionTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{, }\DecValTok{51}\NormalTok{)}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{theme}\NormalTok{(}
+    \AttributeTok{legend.position =} \StringTok{"bottom"}\NormalTok{,}
+    \AttributeTok{axis.text.x =} \FunctionTok{element\_text}\NormalTok{(}
+      \AttributeTok{angle =} \DecValTok{90}\NormalTok{,}
+      \AttributeTok{hjust =} \DecValTok{1}
+\NormalTok{    )}
+\NormalTok{  )}
+\FunctionTok{ggsave}\NormalTok{(}
+  \AttributeTok{file =} \FunctionTok{paste}\NormalTok{(plot\_dir, }\StringTok{"sym\_parent\_tasks\_all\_time\_by\_task\_plt.pdf"}\NormalTok{, }\AttributeTok{sep =} \StringTok{"/"}\NormalTok{),}
+  \AttributeTok{plot =}\NormalTok{ sym\_parent\_tasks\_all\_time\_by\_task\_plt,}
+  \AttributeTok{width =} \DecValTok{8}\NormalTok{,}
+  \AttributeTok{height =} \DecValTok{8}
+\NormalTok{)}
+\NormalTok{sym\_parent\_tasks\_all\_time\_by\_task\_plt}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{supplemental-material_files/figure-latex/unnamed-chunk-61-1.pdf}
+
+\hypertarget{symbiont-maximum-function-complexity-evolved-1}{%
+\subsection{Symbiont maximum function complexity evolved}\label{symbiont-maximum-function-complexity-evolved-1}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{sym\_max\_task\_complexity\_plt }\OtherTok{\textless{}{-}}\NormalTok{ sym\_max\_task\_complexity\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{ggplot}\NormalTok{(}
+    \FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ sym\_condition, }\AttributeTok{fill =}\NormalTok{ sym\_condition, }\AttributeTok{y =}\NormalTok{ max\_task\_complexity)}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{geom\_point}\NormalTok{(}
+    \AttributeTok{mapping=}\FunctionTok{aes}\NormalTok{(}\AttributeTok{color =}\NormalTok{ sym\_condition),}
+    \AttributeTok{position =} \FunctionTok{position\_jitter}\NormalTok{(}\AttributeTok{width =}\NormalTok{ .}\DecValTok{15}\NormalTok{),}
+    \AttributeTok{size =}\NormalTok{ .}\DecValTok{5}\NormalTok{,}
+    \AttributeTok{alpha =} \FloatTok{0.8}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{geom\_boxplot}\NormalTok{(}
+    \AttributeTok{width =}\NormalTok{ .}\DecValTok{1}\NormalTok{,}
+    \AttributeTok{outlier.shape =} \ConstantTok{NA}\NormalTok{,}
+    \AttributeTok{alpha =} \FloatTok{0.5}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{scale\_x\_discrete}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{scale\_color\_manual}\NormalTok{(}\AttributeTok{values =} \FunctionTok{c}\NormalTok{(color\_pal[}\DecValTok{2}\NormalTok{], color\_pal[}\DecValTok{3}\NormalTok{])) }\SpecialCharTok{+}
+  \FunctionTok{scale\_fill\_manual}\NormalTok{(}\AttributeTok{values =} \FunctionTok{c}\NormalTok{(color\_pal[}\DecValTok{2}\NormalTok{], color\_pal[}\DecValTok{3}\NormalTok{])) }\SpecialCharTok{+}
+  \FunctionTok{theme}\NormalTok{(}
+    \AttributeTok{legend.position =} \StringTok{"none"}\NormalTok{,}
+    \AttributeTok{axis.text.x =} \FunctionTok{element\_text}\NormalTok{(}
+      \AttributeTok{angle =} \DecValTok{60}\NormalTok{,}
+      \AttributeTok{hjust =} \DecValTok{1}
+\NormalTok{    )}
+\NormalTok{  )}
+\FunctionTok{ggsave}\NormalTok{(}
+  \AttributeTok{file =} \FunctionTok{paste}\NormalTok{(plot\_dir, }\StringTok{"sym\_max\_task\_complexity\_plt.pdf"}\NormalTok{, }\AttributeTok{sep =} \StringTok{"/"}\NormalTok{),}
+  \AttributeTok{plot =}\NormalTok{ sym\_max\_task\_complexity\_plt,}
+  \AttributeTok{width =} \DecValTok{4}\NormalTok{,}
+  \AttributeTok{height =} \DecValTok{4}
+\NormalTok{)}
+\NormalTok{sym\_max\_task\_complexity\_plt}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{supplemental-material_files/figure-latex/unnamed-chunk-62-1.pdf}
+
+\hypertarget{host-phenotypic-diversity-1}{%
+\section{Host phenotypic diversity}\label{host-phenotypic-diversity-1}}
+
+\hypertarget{number-of-distinct-function-profiles-2}{%
+\subsection{Number of distinct function profiles}\label{number-of-distinct-function-profiles-2}}
+
+Over time:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{host\_parent\_num\_task\_sets\_plt }\OtherTok{\textless{}{-}}\NormalTok{ time\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \CommentTok{\# sample to make plotting faster}
+  \FunctionTok{filter}\NormalTok{(update }\SpecialCharTok{\%\%} \DecValTok{1000} \SpecialCharTok{==} \DecValTok{0}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{ggplot}\NormalTok{(}
+    \FunctionTok{aes}\NormalTok{(}
+      \AttributeTok{x =}\NormalTok{ update,}
+      \AttributeTok{y =}\NormalTok{ CurUpdate\_host\_parent\_num\_task\_sets,}
+      \AttributeTok{color =}\NormalTok{ sym\_condition,}
+      \AttributeTok{fill =}\NormalTok{ sym\_condition}
+\NormalTok{    )}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{stat\_summary}\NormalTok{(}\AttributeTok{fun =} \StringTok{"mean"}\NormalTok{, }\AttributeTok{geom =} \StringTok{"line"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{stat\_summary}\NormalTok{(}
+    \AttributeTok{fun.data =} \StringTok{"mean\_cl\_boot"}\NormalTok{,}
+    \AttributeTok{fun.args =} \FunctionTok{list}\NormalTok{(}\AttributeTok{conf.int =} \FloatTok{0.95}\NormalTok{),}
+    \AttributeTok{geom =} \StringTok{"ribbon"}\NormalTok{,}
+    \AttributeTok{alpha =} \FloatTok{0.2}\NormalTok{,}
+    \AttributeTok{linetype =} \DecValTok{0}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{scale\_color\_manual}\NormalTok{(}\AttributeTok{values =}\NormalTok{ color\_pal) }\SpecialCharTok{+}
+  \FunctionTok{scale\_fill\_manual}\NormalTok{(}\AttributeTok{values =}\NormalTok{ color\_pal) }\SpecialCharTok{+}
+  \FunctionTok{theme}\NormalTok{(}
+    \AttributeTok{legend.position =} \StringTok{"bottom"}
+\NormalTok{  )}
+\FunctionTok{ggsave}\NormalTok{(}
+  \AttributeTok{file =} \FunctionTok{paste}\NormalTok{(plot\_dir, }\StringTok{"host\_parent\_num\_task\_sets\_plt.pdf"}\NormalTok{, }\AttributeTok{sep =} \StringTok{"/"}\NormalTok{),}
+  \AttributeTok{plot =}\NormalTok{ host\_parent\_num\_task\_sets\_plt,}
+  \AttributeTok{width =} \DecValTok{8}\NormalTok{,}
+  \AttributeTok{height =} \DecValTok{8}
+\NormalTok{)}
+\NormalTok{host\_parent\_num\_task\_sets\_plt}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{supplemental-material_files/figure-latex/unnamed-chunk-63-1.pdf}
+
+At the end of the experiment:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{host\_final\_num\_task\_sets\_elapsed\_plt }\OtherTok{\textless{}{-}}\NormalTok{ summary\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{ggplot}\NormalTok{(}
+    \FunctionTok{aes}\NormalTok{(}
+      \AttributeTok{x =}\NormalTok{ sym\_condition,}
+      \AttributeTok{fill =}\NormalTok{ sym\_condition,}
+      \AttributeTok{y =}\NormalTok{ CurUpdate\_host\_parent\_num\_task\_sets}
+\NormalTok{    )}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{geom\_point}\NormalTok{(}
+    \AttributeTok{mapping=}\FunctionTok{aes}\NormalTok{(}\AttributeTok{color =}\NormalTok{ sym\_condition),}
+    \AttributeTok{position =} \FunctionTok{position\_jitter}\NormalTok{(}\AttributeTok{width =}\NormalTok{ .}\DecValTok{15}\NormalTok{),}
+    \AttributeTok{size =}\NormalTok{ .}\DecValTok{5}\NormalTok{,}
+    \AttributeTok{alpha =} \FloatTok{0.8}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{geom\_boxplot}\NormalTok{(}
+    \AttributeTok{width =}\NormalTok{ .}\DecValTok{1}\NormalTok{,}
+    \AttributeTok{outlier.shape =} \ConstantTok{NA}\NormalTok{,}
+    \AttributeTok{alpha =} \FloatTok{0.5}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{scale\_x\_discrete}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{scale\_color\_manual}\NormalTok{(}\AttributeTok{values =}\NormalTok{ color\_pal) }\SpecialCharTok{+}
+  \FunctionTok{scale\_fill\_manual}\NormalTok{(}\AttributeTok{values =}\NormalTok{ color\_pal) }\SpecialCharTok{+}
+  \FunctionTok{theme}\NormalTok{(}
+    \AttributeTok{legend.position =} \StringTok{"none"}\NormalTok{,}
+    \AttributeTok{axis.text.x =} \FunctionTok{element\_text}\NormalTok{(}
+      \AttributeTok{angle =} \DecValTok{60}\NormalTok{,}
+      \AttributeTok{hjust =} \DecValTok{1}
+\NormalTok{    )}
+\NormalTok{  )}
+\FunctionTok{ggsave}\NormalTok{(}
+  \AttributeTok{file =} \FunctionTok{paste}\NormalTok{(plot\_dir, }\StringTok{"host\_final\_num\_task\_sets\_elapsed\_plt.pdf"}\NormalTok{, }\AttributeTok{sep =} \StringTok{"/"}\NormalTok{),}
+  \AttributeTok{plot =}\NormalTok{ host\_final\_num\_task\_sets\_elapsed\_plt,}
+  \AttributeTok{width =} \DecValTok{4}\NormalTok{,}
+  \AttributeTok{height =} \DecValTok{4}
+\NormalTok{)}
+\NormalTok{host\_final\_num\_task\_sets\_elapsed\_plt}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{supplemental-material_files/figure-latex/unnamed-chunk-64-1.pdf}
+
+\hypertarget{shannon-diversity-of-function-profiles-2}{%
+\subsection{Shannon diversity of function profiles}\label{shannon-diversity-of-function-profiles-2}}
+
+Over time:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{host\_parent\_entropy\_task\_sets\_plt }\OtherTok{\textless{}{-}}\NormalTok{ time\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{filter}\NormalTok{(update }\SpecialCharTok{\%\%} \DecValTok{1000} \SpecialCharTok{==} \DecValTok{0}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{ggplot}\NormalTok{(}
+    \FunctionTok{aes}\NormalTok{(}
+      \AttributeTok{x =}\NormalTok{ update,}
+      \AttributeTok{y =}\NormalTok{ CurUpdate\_host\_parent\_entropy\_task\_sets,}
+      \AttributeTok{color =}\NormalTok{ sym\_condition,}
+      \AttributeTok{fill =}\NormalTok{ sym\_condition}
+\NormalTok{    )}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{stat\_summary}\NormalTok{(}\AttributeTok{fun =} \StringTok{"mean"}\NormalTok{, }\AttributeTok{geom =} \StringTok{"line"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{stat\_summary}\NormalTok{(}
+    \AttributeTok{fun.data =} \StringTok{"mean\_cl\_boot"}\NormalTok{,}
+    \AttributeTok{fun.args =} \FunctionTok{list}\NormalTok{(}\AttributeTok{conf.int =} \FloatTok{0.95}\NormalTok{),}
+    \AttributeTok{geom =} \StringTok{"ribbon"}\NormalTok{,}
+    \AttributeTok{alpha =} \FloatTok{0.2}\NormalTok{,}
+    \AttributeTok{linetype =} \DecValTok{0}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{scale\_color\_manual}\NormalTok{(}\AttributeTok{values =}\NormalTok{ color\_pal) }\SpecialCharTok{+}
+  \FunctionTok{scale\_fill\_manual}\NormalTok{(}\AttributeTok{values =}\NormalTok{ color\_pal) }\SpecialCharTok{+}
+  \FunctionTok{theme}\NormalTok{(}
+    \AttributeTok{legend.position =} \StringTok{"bottom"}
+\NormalTok{  )}
+\FunctionTok{ggsave}\NormalTok{(}
+  \AttributeTok{file =} \FunctionTok{paste}\NormalTok{(plot\_dir, }\StringTok{"host\_parent\_entropy\_task\_sets\_plt.pdf"}\NormalTok{, }\AttributeTok{sep =} \StringTok{"/"}\NormalTok{),}
+  \AttributeTok{plot =}\NormalTok{ host\_parent\_entropy\_task\_sets\_plt,}
+  \AttributeTok{width =} \DecValTok{8}\NormalTok{,}
+  \AttributeTok{height =} \DecValTok{8}
+\NormalTok{)}
+\NormalTok{host\_parent\_entropy\_task\_sets\_plt}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{supplemental-material_files/figure-latex/unnamed-chunk-65-1.pdf}
+
+At the end of the experiment:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{host\_final\_entopy\_task\_sets\_elapsed\_plt }\OtherTok{\textless{}{-}}\NormalTok{ summary\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{ggplot}\NormalTok{(}
+    \FunctionTok{aes}\NormalTok{(}
+      \AttributeTok{x =}\NormalTok{ sym\_condition,}
+      \AttributeTok{fill =}\NormalTok{ sym\_condition,}
+      \AttributeTok{y =}\NormalTok{ CurUpdate\_host\_parent\_entropy\_task\_sets}
+\NormalTok{    )}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{geom\_point}\NormalTok{(}
+    \AttributeTok{mapping=}\FunctionTok{aes}\NormalTok{(}\AttributeTok{color =}\NormalTok{ sym\_condition),}
+    \AttributeTok{position =} \FunctionTok{position\_jitter}\NormalTok{(}\AttributeTok{width =}\NormalTok{ .}\DecValTok{15}\NormalTok{),}
+    \AttributeTok{size =}\NormalTok{ .}\DecValTok{5}\NormalTok{,}
+    \AttributeTok{alpha =} \FloatTok{0.8}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{geom\_boxplot}\NormalTok{(}
+    \AttributeTok{width =}\NormalTok{ .}\DecValTok{1}\NormalTok{,}
+    \AttributeTok{outlier.shape =} \ConstantTok{NA}\NormalTok{,}
+    \AttributeTok{alpha =} \FloatTok{0.5}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{scale\_x\_discrete}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{theme}\NormalTok{(}
+    \AttributeTok{legend.position =} \StringTok{"none"}\NormalTok{,}
+    \AttributeTok{axis.text.x =} \FunctionTok{element\_text}\NormalTok{(}
+      \AttributeTok{angle =} \DecValTok{60}\NormalTok{,}
+      \AttributeTok{hjust =} \DecValTok{1}
+\NormalTok{    )}
+\NormalTok{  )}
+\FunctionTok{ggsave}\NormalTok{(}
+  \AttributeTok{file =} \FunctionTok{paste}\NormalTok{(plot\_dir, }\StringTok{"host\_final\_entopy\_task\_sets\_elapsed\_plt.pdf"}\NormalTok{, }\AttributeTok{sep =} \StringTok{"/"}\NormalTok{),}
+  \AttributeTok{plot =}\NormalTok{ host\_final\_entopy\_task\_sets\_elapsed\_plt,}
+  \AttributeTok{width =} \DecValTok{10}\NormalTok{,}
+  \AttributeTok{height =} \DecValTok{10}
+\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+Statistical analysis
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{kw\_test }\OtherTok{\textless{}{-}}\NormalTok{ summary\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{group\_by}\NormalTok{(interaction\_multiplier) }\SpecialCharTok{\%\textgreater{}\%}
+\NormalTok{  rstatix}\SpecialCharTok{::}\FunctionTok{kruskal\_test}\NormalTok{(CurUpdate\_host\_parent\_entropy\_task\_sets }\SpecialCharTok{\textasciitilde{}}\NormalTok{ sym\_condition)}
+\NormalTok{kw\_test}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 1 x 7
+##   interaction_multiplier .y.                   n statistic    df        p method
+## * <fct>                  <chr>             <int>     <dbl> <int>    <dbl> <chr> 
+## 1 4                      CurUpdate_host_p~   150      97.3     2 7.48e-22 Krusk~
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{pairwise.wilcox.test}\NormalTok{(}
+  \AttributeTok{x =}\NormalTok{ summary\_data}\SpecialCharTok{$}\NormalTok{CurUpdate\_host\_parent\_entropy\_task\_sets,}
+  \AttributeTok{g =}\NormalTok{ summary\_data}\SpecialCharTok{$}\NormalTok{sym\_condition,}
+  \AttributeTok{p.adjust.method =} \StringTok{"bonferroni"}\NormalTok{,}
+  \AttributeTok{exact =} \ConstantTok{FALSE}
+\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+##  Pairwise comparisons using Wilcoxon rank sum test with continuity correction 
+## 
+## data:  summary_data$CurUpdate_host_parent_entropy_task_sets and summary_data$sym_condition 
+## 
+##           no-syms parasite
+## parasite  4e-04   -       
+## mutualist 6.9e-16 < 2e-16 
+## 
+## P value adjustment method: bonferroni
+\end{verbatim}
+
+\hypertarget{symbiont-phenotypic-diversity-1}{%
+\section{Symbiont phenotypic diversity}\label{symbiont-phenotypic-diversity-1}}
+
+\hypertarget{number-of-distinct-function-profiles-3}{%
+\subsection{Number of distinct function profiles}\label{number-of-distinct-function-profiles-3}}
+
+Over time:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{sym\_parent\_num\_task\_sets\_plt }\OtherTok{\textless{}{-}}\NormalTok{ time\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \CommentTok{\# sample to make plotting faster}
+  \FunctionTok{filter}\NormalTok{(update }\SpecialCharTok{\%\%} \DecValTok{1000} \SpecialCharTok{==} \DecValTok{0}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{ggplot}\NormalTok{(}
+    \FunctionTok{aes}\NormalTok{(}
+      \AttributeTok{x =}\NormalTok{ update,}
+      \AttributeTok{y =}\NormalTok{ CurUpdate\_sym\_parent\_num\_task\_sets,}
+      \AttributeTok{color =}\NormalTok{ sym\_condition,}
+      \AttributeTok{fill =}\NormalTok{ sym\_condition}
+\NormalTok{    )}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{stat\_summary}\NormalTok{(}\AttributeTok{fun =} \StringTok{"mean"}\NormalTok{, }\AttributeTok{geom =} \StringTok{"line"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{stat\_summary}\NormalTok{(}
+    \AttributeTok{fun.data =} \StringTok{"mean\_cl\_boot"}\NormalTok{,}
+    \AttributeTok{fun.args =} \FunctionTok{list}\NormalTok{(}\AttributeTok{conf.int =} \FloatTok{0.95}\NormalTok{),}
+    \AttributeTok{geom =} \StringTok{"ribbon"}\NormalTok{,}
+    \AttributeTok{alpha =} \FloatTok{0.2}\NormalTok{,}
+    \AttributeTok{linetype =} \DecValTok{0}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{scale\_color\_manual}\NormalTok{(}\AttributeTok{values =}\NormalTok{ color\_pal) }\SpecialCharTok{+}
+  \FunctionTok{scale\_fill\_manual}\NormalTok{(}\AttributeTok{values =}\NormalTok{ color\_pal) }\SpecialCharTok{+}
+  \FunctionTok{theme}\NormalTok{(}
+    \AttributeTok{legend.position =} \StringTok{"bottom"}
+\NormalTok{  )}
+\FunctionTok{ggsave}\NormalTok{(}
+  \AttributeTok{file =} \FunctionTok{paste}\NormalTok{(plot\_dir, }\StringTok{"sym\_parent\_num\_task\_sets\_plt.pdf"}\NormalTok{, }\AttributeTok{sep =} \StringTok{"/"}\NormalTok{),}
+  \AttributeTok{plot =}\NormalTok{ sym\_parent\_num\_task\_sets\_plt,}
+  \AttributeTok{width =} \DecValTok{8}\NormalTok{,}
+  \AttributeTok{height =} \DecValTok{8}
+\NormalTok{)}
+\NormalTok{sym\_parent\_num\_task\_sets\_plt}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{supplemental-material_files/figure-latex/unnamed-chunk-69-1.pdf}
+
+At the end of the experiment:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{sym\_final\_num\_task\_sets\_elapsed\_plt }\OtherTok{\textless{}{-}}\NormalTok{ summary\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{ggplot}\NormalTok{(}
+    \FunctionTok{aes}\NormalTok{(}
+      \AttributeTok{x =}\NormalTok{ sym\_condition,}
+      \AttributeTok{fill =}\NormalTok{ sym\_condition,}
+      \AttributeTok{y =}\NormalTok{ CurUpdate\_sym\_parent\_num\_task\_sets}
+\NormalTok{    )}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{geom\_point}\NormalTok{(}
+    \AttributeTok{mapping=}\FunctionTok{aes}\NormalTok{(}\AttributeTok{color =}\NormalTok{ sym\_condition),}
+    \AttributeTok{position =} \FunctionTok{position\_jitter}\NormalTok{(}\AttributeTok{width =}\NormalTok{ .}\DecValTok{15}\NormalTok{),}
+    \AttributeTok{size =}\NormalTok{ .}\DecValTok{5}\NormalTok{,}
+    \AttributeTok{alpha =} \FloatTok{0.8}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{geom\_boxplot}\NormalTok{(}
+    \AttributeTok{width =}\NormalTok{ .}\DecValTok{1}\NormalTok{,}
+    \AttributeTok{outlier.shape =} \ConstantTok{NA}\NormalTok{,}
+    \AttributeTok{alpha =} \FloatTok{0.5}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{scale\_x\_discrete}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{scale\_color\_manual}\NormalTok{(}\AttributeTok{values =}\NormalTok{ color\_pal) }\SpecialCharTok{+}
+  \FunctionTok{scale\_fill\_manual}\NormalTok{(}\AttributeTok{values =}\NormalTok{ color\_pal) }\SpecialCharTok{+}
+  \FunctionTok{theme}\NormalTok{(}
+    \AttributeTok{legend.position =} \StringTok{"none"}\NormalTok{,}
+    \AttributeTok{axis.text.x =} \FunctionTok{element\_text}\NormalTok{(}
+      \AttributeTok{angle =} \DecValTok{60}\NormalTok{,}
+      \AttributeTok{hjust =} \DecValTok{1}
+\NormalTok{    )}
+\NormalTok{  )}
+\FunctionTok{ggsave}\NormalTok{(}
+  \AttributeTok{file =} \FunctionTok{paste}\NormalTok{(plot\_dir, }\StringTok{"sym\_final\_num\_task\_sets\_elapsed\_plt.pdf"}\NormalTok{, }\AttributeTok{sep =} \StringTok{"/"}\NormalTok{),}
+  \AttributeTok{plot =}\NormalTok{ sym\_final\_num\_task\_sets\_elapsed\_plt,}
+  \AttributeTok{width =} \DecValTok{4}\NormalTok{,}
+  \AttributeTok{height =} \DecValTok{4}
+\NormalTok{)}
+\NormalTok{sym\_final\_num\_task\_sets\_elapsed\_plt}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{supplemental-material_files/figure-latex/unnamed-chunk-70-1.pdf}
+
+\hypertarget{shannon-diversity-of-function-profiles-3}{%
+\subsection{Shannon diversity of function profiles}\label{shannon-diversity-of-function-profiles-3}}
+
+Over time:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{sym\_parent\_entropy\_task\_sets\_plt }\OtherTok{\textless{}{-}}\NormalTok{ time\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{filter}\NormalTok{(update }\SpecialCharTok{\%\%} \DecValTok{1000} \SpecialCharTok{==} \DecValTok{0}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{ggplot}\NormalTok{(}
+    \FunctionTok{aes}\NormalTok{(}
+      \AttributeTok{x =}\NormalTok{ update,}
+      \AttributeTok{y =}\NormalTok{ CurUpdate\_sym\_parent\_entropy\_task\_sets,}
+      \AttributeTok{color =}\NormalTok{ sym\_condition,}
+      \AttributeTok{fill =}\NormalTok{ sym\_condition}
+\NormalTok{    )}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{stat\_summary}\NormalTok{(}\AttributeTok{fun =} \StringTok{"mean"}\NormalTok{, }\AttributeTok{geom =} \StringTok{"line"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{stat\_summary}\NormalTok{(}
+    \AttributeTok{fun.data =} \StringTok{"mean\_cl\_boot"}\NormalTok{,}
+    \AttributeTok{fun.args =} \FunctionTok{list}\NormalTok{(}\AttributeTok{conf.int =} \FloatTok{0.95}\NormalTok{),}
+    \AttributeTok{geom =} \StringTok{"ribbon"}\NormalTok{,}
+    \AttributeTok{alpha =} \FloatTok{0.2}\NormalTok{,}
+    \AttributeTok{linetype =} \DecValTok{0}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{scale\_color\_manual}\NormalTok{(}\AttributeTok{values =}\NormalTok{ color\_pal) }\SpecialCharTok{+}
+  \FunctionTok{scale\_fill\_manual}\NormalTok{(}\AttributeTok{values =}\NormalTok{ color\_pal) }\SpecialCharTok{+}
+  \FunctionTok{theme}\NormalTok{(}
+    \AttributeTok{legend.position =} \StringTok{"bottom"}
+\NormalTok{  )}
+\FunctionTok{ggsave}\NormalTok{(}
+  \AttributeTok{file =} \FunctionTok{paste}\NormalTok{(plot\_dir, }\StringTok{"sym\_parent\_entropy\_task\_sets\_plt.pdf"}\NormalTok{, }\AttributeTok{sep =} \StringTok{"/"}\NormalTok{),}
+  \AttributeTok{plot =}\NormalTok{ sym\_parent\_entropy\_task\_sets\_plt,}
+  \AttributeTok{width =} \DecValTok{8}\NormalTok{,}
+  \AttributeTok{height =} \DecValTok{8}
+\NormalTok{)}
+\NormalTok{sym\_parent\_entropy\_task\_sets\_plt}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{supplemental-material_files/figure-latex/unnamed-chunk-71-1.pdf}
+
+At the end of the experiment:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{sym\_final\_entopy\_task\_sets\_elapsed\_plt }\OtherTok{\textless{}{-}}\NormalTok{ summary\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{ggplot}\NormalTok{(}
+    \FunctionTok{aes}\NormalTok{(}
+      \AttributeTok{x =}\NormalTok{ sym\_condition,}
+      \AttributeTok{fill =}\NormalTok{ sym\_condition,}
+      \AttributeTok{y =}\NormalTok{ CurUpdate\_sym\_parent\_entropy\_task\_sets}
+\NormalTok{    )}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{geom\_point}\NormalTok{(}
+    \AttributeTok{mapping=}\FunctionTok{aes}\NormalTok{(}\AttributeTok{color =}\NormalTok{ sym\_condition),}
+    \AttributeTok{position =} \FunctionTok{position\_jitter}\NormalTok{(}\AttributeTok{width =}\NormalTok{ .}\DecValTok{15}\NormalTok{),}
+    \AttributeTok{size =}\NormalTok{ .}\DecValTok{5}\NormalTok{,}
+    \AttributeTok{alpha =} \FloatTok{0.8}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{geom\_boxplot}\NormalTok{(}
+    \AttributeTok{width =}\NormalTok{ .}\DecValTok{1}\NormalTok{,}
+    \AttributeTok{outlier.shape =} \ConstantTok{NA}\NormalTok{,}
+    \AttributeTok{alpha =} \FloatTok{0.5}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{scale\_x\_discrete}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{theme}\NormalTok{(}
+    \AttributeTok{legend.position =} \StringTok{"none"}\NormalTok{,}
+    \AttributeTok{axis.text.x =} \FunctionTok{element\_text}\NormalTok{(}
+      \AttributeTok{angle =} \DecValTok{60}\NormalTok{,}
+      \AttributeTok{hjust =} \DecValTok{1}
+\NormalTok{    )}
+\NormalTok{  )}
+\FunctionTok{ggsave}\NormalTok{(}
+  \AttributeTok{file =} \FunctionTok{paste}\NormalTok{(plot\_dir, }\StringTok{"sym\_final\_entopy\_task\_sets\_elapsed\_plt.pdf"}\NormalTok{, }\AttributeTok{sep =} \StringTok{"/"}\NormalTok{),}
+  \AttributeTok{plot =}\NormalTok{ sym\_final\_entopy\_task\_sets\_elapsed\_plt,}
+  \AttributeTok{width =} \DecValTok{10}\NormalTok{,}
+  \AttributeTok{height =} \DecValTok{10}
+\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{trait-matches-over-time-1}{%
+\section{Trait matches over time}\label{trait-matches-over-time-1}}
+
+Counts of host-symbiont pairs with any trait matches.
+Note that organisms that were just born will not have had time to express any
+Boolean logic functions, so they will appear as not matching.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{host\_sym\_any\_matches\_total\_plt }\OtherTok{\textless{}{-}}\NormalTok{ time\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{filter}\NormalTok{(update }\SpecialCharTok{\%\%} \DecValTok{1000} \SpecialCharTok{==} \DecValTok{0}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{ggplot}\NormalTok{(}
+    \FunctionTok{aes}\NormalTok{(}
+      \AttributeTok{x =}\NormalTok{ update,}
+      \AttributeTok{y =}\NormalTok{ CurUpdate\_host\_sym\_any\_matches\_total,}
+      \AttributeTok{color =}\NormalTok{ sym\_condition,}
+      \AttributeTok{fill =}\NormalTok{ sym\_condition}
+\NormalTok{    )}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{stat\_summary}\NormalTok{(}\AttributeTok{fun =} \StringTok{"mean"}\NormalTok{, }\AttributeTok{geom =} \StringTok{"line"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{stat\_summary}\NormalTok{(}
+    \AttributeTok{fun.data =} \StringTok{"mean\_cl\_boot"}\NormalTok{,}
+    \AttributeTok{fun.args =} \FunctionTok{list}\NormalTok{(}\AttributeTok{conf.int =} \FloatTok{0.95}\NormalTok{),}
+    \AttributeTok{geom =} \StringTok{"ribbon"}\NormalTok{,}
+    \AttributeTok{alpha =} \FloatTok{0.2}\NormalTok{,}
+    \AttributeTok{linetype =} \DecValTok{0}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{scale\_color\_manual}\NormalTok{(}\AttributeTok{values =}\NormalTok{ color\_pal) }\SpecialCharTok{+}
+  \FunctionTok{scale\_fill\_manual}\NormalTok{(}\AttributeTok{values =}\NormalTok{ color\_pal) }\SpecialCharTok{+}
+  \FunctionTok{theme}\NormalTok{(}
+    \AttributeTok{legend.position =} \StringTok{"bottom"}
+\NormalTok{  )}
+\FunctionTok{ggsave}\NormalTok{(}
+  \AttributeTok{file =} \FunctionTok{paste}\NormalTok{(plot\_dir, }\StringTok{"host\_sym\_any\_matches\_total\_plt.pdf"}\NormalTok{, }\AttributeTok{sep =} \StringTok{"/"}\NormalTok{),}
+  \AttributeTok{plot =}\NormalTok{ host\_sym\_any\_matches\_total\_plt,}
+  \AttributeTok{width =} \DecValTok{8}\NormalTok{,}
+  \AttributeTok{height =} \DecValTok{8}
+\NormalTok{)}
+\NormalTok{host\_sym\_any\_matches\_total\_plt}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{supplemental-material_files/figure-latex/unnamed-chunk-73-1.pdf}
+
+\hypertarget{evolutionary-engagement-1}{%
+\section{Evolutionary engagement}\label{evolutionary-engagement-1}}
+
+Use trait matching metrics to determine if host-symbiont populations are evolutionarily engaged.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{engagement }\OtherTok{\textless{}{-}}\NormalTok{ summary\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}
+    \AttributeTok{host\_sym\_engagement =}\NormalTok{ CurUpdate\_host\_sym\_any\_matches\_total }\SpecialCharTok{\textgreater{}}\NormalTok{ threshold,}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{group\_by}\NormalTok{(}
+\NormalTok{    sym\_condition}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{summarise}\NormalTok{(}
+    \AttributeTok{host\_sym\_engagement\_count =} \FunctionTok{sum}\NormalTok{(host\_sym\_engagement)}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{host\_sym\_engagement\_count\_plt }\OtherTok{\textless{}{-}}\NormalTok{ engagement }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{ggplot}\NormalTok{(}
+    \FunctionTok{aes}\NormalTok{(}
+      \AttributeTok{x =}\NormalTok{ sym\_condition,}
+      \AttributeTok{color =}\NormalTok{ sym\_condition,}
+      \AttributeTok{fill =}\NormalTok{ sym\_condition,}
+      \AttributeTok{y =}\NormalTok{ host\_sym\_engagement\_count}
+\NormalTok{    )}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{geom\_col}\NormalTok{(}
+    \AttributeTok{position =} \StringTok{"dodge"}\NormalTok{,}
+    \AttributeTok{alpha =} \FloatTok{0.5}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{geom\_text}\NormalTok{(}
+    \FunctionTok{aes}\NormalTok{(}\AttributeTok{label =}\NormalTok{ host\_sym\_engagement\_count),}
+    \AttributeTok{position =} \FunctionTok{position\_dodge}\NormalTok{(}\AttributeTok{width =} \DecValTok{1}\NormalTok{),}
+    \AttributeTok{vjust =} \SpecialCharTok{{-}}\FloatTok{0.5}\NormalTok{,}
+    \AttributeTok{size =} \DecValTok{2}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{scale\_color\_manual}\NormalTok{(}\AttributeTok{values =}\NormalTok{ color\_pal) }\SpecialCharTok{+}
+  \FunctionTok{scale\_fill\_manual}\NormalTok{(}\AttributeTok{values =}\NormalTok{ color\_pal) }\SpecialCharTok{+}
+  \FunctionTok{scale\_x\_discrete}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{scale\_y\_continuous}\NormalTok{(}
+    \AttributeTok{limits =} \FunctionTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{, }\DecValTok{51}\NormalTok{)}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{theme}\NormalTok{(}
+    \AttributeTok{legend.position =} \StringTok{"none"}
+\NormalTok{  )}
+
+\FunctionTok{ggsave}\NormalTok{(}
+  \AttributeTok{file =} \FunctionTok{paste}\NormalTok{(plot\_dir, }\StringTok{"host\_sym\_engagement\_count\_plt.pdf"}\NormalTok{, }\AttributeTok{sep =} \StringTok{"/"}\NormalTok{),}
+  \AttributeTok{plot =}\NormalTok{ host\_sym\_engagement\_count\_plt,}
+  \AttributeTok{width =} \DecValTok{4}\NormalTok{,}
+  \AttributeTok{height =} \DecValTok{4}
+\NormalTok{)}
+\NormalTok{host\_sym\_engagement\_count\_plt}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{supplemental-material_files/figure-latex/unnamed-chunk-75-1.pdf}
+
+\hypertarget{generations-of-evolution-elapsed-1}{%
+\section{Generations of evolution elapsed}\label{generations-of-evolution-elapsed-1}}
+
+\hypertarget{hosts-1}{%
+\subsection{Hosts}\label{hosts-1}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{host\_avg\_gens\_elapsed\_plt }\OtherTok{\textless{}{-}}\NormalTok{ summary\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{ggplot}\NormalTok{(}
+    \FunctionTok{aes}\NormalTok{(}
+      \AttributeTok{x =}\NormalTok{ sym\_condition,}
+      \AttributeTok{fill =}\NormalTok{ sym\_condition,}
+      \AttributeTok{y =}\NormalTok{ CurUpdate\_host\_mean\_generations}
+\NormalTok{    )}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{geom\_point}\NormalTok{(}
+    \AttributeTok{mapping =} \FunctionTok{aes}\NormalTok{(}\AttributeTok{color =}\NormalTok{ sym\_condition),}
+    \AttributeTok{position =} \FunctionTok{position\_jitter}\NormalTok{(}\AttributeTok{width =}\NormalTok{ .}\DecValTok{15}\NormalTok{),}
+    \AttributeTok{size =}\NormalTok{ .}\DecValTok{5}\NormalTok{,}
+    \AttributeTok{alpha =} \FloatTok{0.8}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{geom\_boxplot}\NormalTok{(}
+    \AttributeTok{width =}\NormalTok{ .}\DecValTok{1}\NormalTok{,}
+    \AttributeTok{outlier.shape =} \ConstantTok{NA}\NormalTok{,}
+    \AttributeTok{alpha =} \FloatTok{0.5}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{scale\_x\_discrete}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{scale\_color\_manual}\NormalTok{(}\AttributeTok{values =}\NormalTok{ color\_pal) }\SpecialCharTok{+}
+  \FunctionTok{scale\_fill\_manual}\NormalTok{(}\AttributeTok{values =}\NormalTok{ color\_pal) }\SpecialCharTok{+}
+  \FunctionTok{theme}\NormalTok{(}
+    \AttributeTok{legend.position =} \StringTok{"none"}\NormalTok{,}
+    \AttributeTok{axis.text.x =} \FunctionTok{element\_text}\NormalTok{(}
+      \AttributeTok{angle =} \DecValTok{60}\NormalTok{,}
+      \AttributeTok{hjust =} \DecValTok{1}
+\NormalTok{    )}
+\NormalTok{  )}
+\FunctionTok{ggsave}\NormalTok{(}
+  \AttributeTok{file =} \FunctionTok{paste}\NormalTok{(plot\_dir, }\StringTok{"host\_avg\_gens\_elapsed\_plt.pdf"}\NormalTok{, }\AttributeTok{sep =} \StringTok{"/"}\NormalTok{),}
+  \AttributeTok{plot =}\NormalTok{ host\_avg\_gens\_elapsed\_plt,}
+  \AttributeTok{width =} \DecValTok{4}\NormalTok{,}
+  \AttributeTok{height =} \DecValTok{4}
+\NormalTok{)}
+\NormalTok{host\_avg\_gens\_elapsed\_plt}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{supplemental-material_files/figure-latex/unnamed-chunk-76-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{summary\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{group\_by}\NormalTok{(}
+\NormalTok{    sym\_condition}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{summarise}\NormalTok{(}
+    \AttributeTok{mean\_gens =} \FunctionTok{mean}\NormalTok{(CurUpdate\_host\_mean\_generations),}
+    \AttributeTok{median\_gens =} \FunctionTok{median}\NormalTok{(CurUpdate\_host\_mean\_generations),}
+    \AttributeTok{var\_gens =} \FunctionTok{var}\NormalTok{(CurUpdate\_host\_mean\_generations),}
+    \AttributeTok{sdev\_gens =} \FunctionTok{sd}\NormalTok{(CurUpdate\_host\_mean\_generations)}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 3 x 5
+##   sym_condition mean_gens median_gens var_gens sdev_gens
+##   <fct>             <dbl>       <dbl>    <dbl>     <dbl>
+## 1 no-syms           3887.       3952.  160311.      400.
+## 2 parasite          3069.       3384. 1496216.     1223.
+## 3 mutualist         4333.       4317.   22501.      150.
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{kw\_test }\OtherTok{\textless{}{-}}\NormalTok{ summary\_data }\SpecialCharTok{\%\textgreater{}\%}
+\NormalTok{  rstatix}\SpecialCharTok{::}\FunctionTok{kruskal\_test}\NormalTok{(CurUpdate\_host\_mean\_generations }\SpecialCharTok{\textasciitilde{}}\NormalTok{ sym\_condition)}
+\NormalTok{kw\_test}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 1 x 6
+##   .y.                                 n statistic    df        p method        
+## * <chr>                           <int>     <dbl> <int>    <dbl> <chr>         
+## 1 CurUpdate_host_mean_generations   150      73.6     2 1.06e-16 Kruskal-Wallis
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{pairwise.wilcox.test}\NormalTok{(}
+  \AttributeTok{x =}\NormalTok{ summary\_data}\SpecialCharTok{$}\NormalTok{CurUpdate\_host\_mean\_generations,}
+  \AttributeTok{g =}\NormalTok{ summary\_data}\SpecialCharTok{$}\NormalTok{sym\_condition,}
+  \AttributeTok{p.adjust.method =} \StringTok{"bonferroni"}\NormalTok{,}
+  \AttributeTok{exact =} \ConstantTok{FALSE}
+\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+##  Pairwise comparisons using Wilcoxon rank sum test with continuity correction 
+## 
+## data:  summary_data$CurUpdate_host_mean_generations and summary_data$sym_condition 
+## 
+##           no-syms parasite
+## parasite  0.00048 -       
+## mutualist 2.1e-11 1.3e-12 
+## 
+## P value adjustment method: bonferroni
+\end{verbatim}
+
+\hypertarget{symbionts-1}{%
+\subsection{Symbionts}\label{symbionts-1}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{sym\_avg\_gens\_elapsed\_plt }\OtherTok{\textless{}{-}}\NormalTok{ summary\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{ggplot}\NormalTok{(}
+    \FunctionTok{aes}\NormalTok{(}
+      \AttributeTok{x =}\NormalTok{ sym\_condition,}
+      \AttributeTok{fill =}\NormalTok{ sym\_condition,}
+      \AttributeTok{y =}\NormalTok{ CurUpdate\_sym\_mean\_generations}
+\NormalTok{    )}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{geom\_point}\NormalTok{(}
+    \AttributeTok{mapping =} \FunctionTok{aes}\NormalTok{(}\AttributeTok{color =}\NormalTok{ sym\_condition),}
+    \AttributeTok{position =} \FunctionTok{position\_jitter}\NormalTok{(}\AttributeTok{width =}\NormalTok{ .}\DecValTok{15}\NormalTok{),}
+    \AttributeTok{size =}\NormalTok{ .}\DecValTok{5}\NormalTok{,}
+    \AttributeTok{alpha =} \FloatTok{0.8}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{geom\_boxplot}\NormalTok{(}
+    \AttributeTok{width =}\NormalTok{ .}\DecValTok{1}\NormalTok{,}
+    \AttributeTok{outlier.shape =} \ConstantTok{NA}\NormalTok{,}
+    \AttributeTok{alpha =} \FloatTok{0.5}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{scale\_x\_discrete}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{scale\_color\_manual}\NormalTok{(}\AttributeTok{values =}\NormalTok{ color\_pal) }\SpecialCharTok{+}
+  \FunctionTok{scale\_fill\_manual}\NormalTok{(}\AttributeTok{values =}\NormalTok{ color\_pal) }\SpecialCharTok{+}
+  \FunctionTok{theme}\NormalTok{(}
+    \AttributeTok{legend.position =} \StringTok{"none"}\NormalTok{,}
+    \AttributeTok{axis.text.x =} \FunctionTok{element\_text}\NormalTok{(}
+      \AttributeTok{angle =} \DecValTok{60}\NormalTok{,}
+      \AttributeTok{hjust =} \DecValTok{1}
+\NormalTok{    )}
+\NormalTok{  )}
+\FunctionTok{ggsave}\NormalTok{(}
+  \AttributeTok{file =} \FunctionTok{paste}\NormalTok{(plot\_dir, }\StringTok{"sym\_avg\_gens\_elapsed\_plt.pdf"}\NormalTok{, }\AttributeTok{sep =} \StringTok{"/"}\NormalTok{),}
+  \AttributeTok{plot =}\NormalTok{ sym\_avg\_gens\_elapsed\_plt,}
+  \AttributeTok{width =} \DecValTok{4}\NormalTok{,}
+  \AttributeTok{height =} \DecValTok{4}
+\NormalTok{)}
+\NormalTok{sym\_avg\_gens\_elapsed\_plt}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{supplemental-material_files/figure-latex/unnamed-chunk-80-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{summary\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{group\_by}\NormalTok{(}
+\NormalTok{    sym\_condition}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{summarise}\NormalTok{(}
+    \AttributeTok{mean\_gens =} \FunctionTok{mean}\NormalTok{(CurUpdate\_sym\_mean\_generations),}
+    \AttributeTok{median\_gens =} \FunctionTok{median}\NormalTok{(CurUpdate\_sym\_mean\_generations),}
+    \AttributeTok{var\_gens =} \FunctionTok{var}\NormalTok{(CurUpdate\_sym\_mean\_generations),}
+    \AttributeTok{sdev\_gens =} \FunctionTok{sd}\NormalTok{(CurUpdate\_sym\_mean\_generations)}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 3 x 5
+##   sym_condition mean_gens median_gens var_gens sdev_gens
+##   <fct>             <dbl>       <dbl>    <dbl>     <dbl>
+## 1 no-syms              0           0        0         0 
+## 2 parasite           401.          0   573648.      757.
+## 3 mutualist         4333.       4317.   22198.      149.
+\end{verbatim}
+
+\hypertarget{symbiont-transmission-rates-1}{%
+\section{Symbiont transmission rates}\label{symbiont-transmission-rates-1}}
+
+\hypertarget{horizontal-transmission-attempts-1}{%
+\subsection{Horizontal transmission attempts}\label{horizontal-transmission-attempts-1}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{TransmissionRates\_attempts\_horiztrans\_plt }\OtherTok{\textless{}{-}}\NormalTok{ time\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{filter}\NormalTok{(update }\SpecialCharTok{\%\%} \DecValTok{1000} \SpecialCharTok{==} \DecValTok{0}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{ggplot}\NormalTok{(}
+    \FunctionTok{aes}\NormalTok{(}
+      \AttributeTok{x =}\NormalTok{ update,}
+      \AttributeTok{y =}\NormalTok{ TransmissionRates\_attempts\_horiztrans,}
+      \AttributeTok{color =}\NormalTok{ sym\_condition,}
+      \AttributeTok{fill =}\NormalTok{ sym\_condition}
+\NormalTok{    )}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{stat\_summary}\NormalTok{(}\AttributeTok{fun =} \StringTok{"mean"}\NormalTok{, }\AttributeTok{geom =} \StringTok{"line"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{stat\_summary}\NormalTok{(}
+    \AttributeTok{fun.data =} \StringTok{"mean\_cl\_boot"}\NormalTok{,}
+    \AttributeTok{fun.args =} \FunctionTok{list}\NormalTok{(}\AttributeTok{conf.int =} \FloatTok{0.95}\NormalTok{),}
+    \AttributeTok{geom =} \StringTok{"ribbon"}\NormalTok{,}
+    \AttributeTok{alpha =} \FloatTok{0.2}\NormalTok{,}
+    \AttributeTok{linetype =} \DecValTok{0}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{scale\_color\_manual}\NormalTok{(}\AttributeTok{values =}\NormalTok{ color\_pal) }\SpecialCharTok{+}
+  \FunctionTok{scale\_fill\_manual}\NormalTok{(}\AttributeTok{values =}\NormalTok{ color\_pal) }\SpecialCharTok{+}
+  \FunctionTok{theme}\NormalTok{(}
+    \AttributeTok{legend.position =} \StringTok{"bottom"}
+\NormalTok{  )}
+\FunctionTok{ggsave}\NormalTok{(}
+  \AttributeTok{file =} \FunctionTok{paste}\NormalTok{(}
+\NormalTok{    plot\_dir,}
+    \StringTok{"TransmissionRates\_attempts\_horiztrans\_plt.pdf"}\NormalTok{,}
+    \AttributeTok{sep =} \StringTok{"/"}
+\NormalTok{  ),}
+  \AttributeTok{plot =}\NormalTok{ TransmissionRates\_attempts\_horiztrans\_plt,}
+  \AttributeTok{width =} \DecValTok{8}\NormalTok{,}
+  \AttributeTok{height =} \DecValTok{8}
+\NormalTok{)}
+\NormalTok{TransmissionRates\_attempts\_horiztrans\_plt}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{supplemental-material_files/figure-latex/unnamed-chunk-82-1.pdf}
+
+\hypertarget{horizontal-transmission-successes-1}{%
+\subsection{Horizontal transmission successes}\label{horizontal-transmission-successes-1}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{TransmissionRates\_successes\_horiztrans\_plt }\OtherTok{\textless{}{-}}\NormalTok{ time\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{filter}\NormalTok{(update }\SpecialCharTok{\%\%} \DecValTok{1000} \SpecialCharTok{==} \DecValTok{0}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{ggplot}\NormalTok{(}
+    \FunctionTok{aes}\NormalTok{(}
+      \AttributeTok{x =}\NormalTok{ update,}
+      \AttributeTok{y =}\NormalTok{ TransmissionRates\_successes\_horiztrans,}
+      \AttributeTok{color =}\NormalTok{ sym\_condition,}
+      \AttributeTok{fill =}\NormalTok{ sym\_condition}
+\NormalTok{    )}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{stat\_summary}\NormalTok{(}\AttributeTok{fun =} \StringTok{"mean"}\NormalTok{, }\AttributeTok{geom =} \StringTok{"line"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{stat\_summary}\NormalTok{(}
+    \AttributeTok{fun.data =} \StringTok{"mean\_cl\_boot"}\NormalTok{,}
+    \AttributeTok{fun.args =} \FunctionTok{list}\NormalTok{(}\AttributeTok{conf.int =} \FloatTok{0.95}\NormalTok{),}
+    \AttributeTok{geom =} \StringTok{"ribbon"}\NormalTok{,}
+    \AttributeTok{alpha =} \FloatTok{0.2}\NormalTok{,}
+    \AttributeTok{linetype =} \DecValTok{0}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{scale\_color\_manual}\NormalTok{(}\AttributeTok{values =}\NormalTok{ color\_pal) }\SpecialCharTok{+}
+  \FunctionTok{scale\_fill\_manual}\NormalTok{(}\AttributeTok{values =}\NormalTok{ color\_pal) }\SpecialCharTok{+}
+  \FunctionTok{theme}\NormalTok{(}
+    \AttributeTok{legend.position =} \StringTok{"bottom"}
+\NormalTok{  )}
+\FunctionTok{ggsave}\NormalTok{(}
+  \AttributeTok{file =} \FunctionTok{paste}\NormalTok{(}
+\NormalTok{    plot\_dir,}
+    \StringTok{"TransmissionRates\_successes\_horiztrans\_plt.pdf"}\NormalTok{,}
+    \AttributeTok{sep =} \StringTok{"/"}
+\NormalTok{  ),}
+  \AttributeTok{plot =}\NormalTok{ TransmissionRates\_successes\_horiztrans\_plt,}
+  \AttributeTok{width =} \DecValTok{8}\NormalTok{,}
+  \AttributeTok{height =} \DecValTok{8}
+\NormalTok{)}
+\NormalTok{TransmissionRates\_successes\_horiztrans\_plt}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{supplemental-material_files/figure-latex/unnamed-chunk-83-1.pdf}
+
+\hypertarget{vertical-transmission-attempts-1}{%
+\subsection{Vertical transmission attempts}\label{vertical-transmission-attempts-1}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{TransmissionRates\_attempts\_verttrans\_plt }\OtherTok{\textless{}{-}}\NormalTok{ time\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{filter}\NormalTok{(update }\SpecialCharTok{\%\%} \DecValTok{1000} \SpecialCharTok{==} \DecValTok{0}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{ggplot}\NormalTok{(}
+    \FunctionTok{aes}\NormalTok{(}
+      \AttributeTok{x =}\NormalTok{ update,}
+      \AttributeTok{y =}\NormalTok{ TransmissionRates\_attempts\_verttrans,}
+      \AttributeTok{color =}\NormalTok{ sym\_condition,}
+      \AttributeTok{fill =}\NormalTok{ sym\_condition}
+\NormalTok{    )}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{stat\_summary}\NormalTok{(}\AttributeTok{fun =} \StringTok{"mean"}\NormalTok{, }\AttributeTok{geom =} \StringTok{"line"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{stat\_summary}\NormalTok{(}
+    \AttributeTok{fun.data =} \StringTok{"mean\_cl\_boot"}\NormalTok{,}
+    \AttributeTok{fun.args =} \FunctionTok{list}\NormalTok{(}\AttributeTok{conf.int =} \FloatTok{0.95}\NormalTok{),}
+    \AttributeTok{geom =} \StringTok{"ribbon"}\NormalTok{,}
+    \AttributeTok{alpha =} \FloatTok{0.2}\NormalTok{,}
+    \AttributeTok{linetype =} \DecValTok{0}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{scale\_color\_manual}\NormalTok{(}\AttributeTok{values =}\NormalTok{ color\_pal) }\SpecialCharTok{+}
+  \FunctionTok{scale\_fill\_manual}\NormalTok{(}\AttributeTok{values =}\NormalTok{ color\_pal) }\SpecialCharTok{+}
+  \FunctionTok{theme}\NormalTok{(}
+    \AttributeTok{legend.position =} \StringTok{"bottom"}
+\NormalTok{  )}
+\FunctionTok{ggsave}\NormalTok{(}
+  \AttributeTok{file =} \FunctionTok{paste}\NormalTok{(}
+\NormalTok{    plot\_dir,}
+    \StringTok{"TransmissionRates\_attempts\_verttrans\_plt.pdf"}\NormalTok{,}
+    \AttributeTok{sep =} \StringTok{"/"}
+\NormalTok{  ),}
+  \AttributeTok{plot =}\NormalTok{ TransmissionRates\_attempts\_verttrans\_plt,}
+  \AttributeTok{width =} \DecValTok{8}\NormalTok{,}
+  \AttributeTok{height =} \DecValTok{8}
+\NormalTok{)}
+\NormalTok{TransmissionRates\_attempts\_verttrans\_plt}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{supplemental-material_files/figure-latex/unnamed-chunk-84-1.pdf}
+
+\hypertarget{successes-vertical-transmission-1}{%
+\subsection{Successes vertical transmission}\label{successes-vertical-transmission-1}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{TransmissionRates\_successes\_verttrans\_plt }\OtherTok{\textless{}{-}}\NormalTok{ time\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{filter}\NormalTok{(update }\SpecialCharTok{\%\%} \DecValTok{1000} \SpecialCharTok{==} \DecValTok{0}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{ggplot}\NormalTok{(}
+    \FunctionTok{aes}\NormalTok{(}
+      \AttributeTok{x =}\NormalTok{ update,}
+      \AttributeTok{y =}\NormalTok{ TransmissionRates\_successes\_verttrans,}
+      \AttributeTok{color =}\NormalTok{ sym\_condition,}
+      \AttributeTok{fill =}\NormalTok{ sym\_condition}
+\NormalTok{    )}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{stat\_summary}\NormalTok{(}\AttributeTok{fun =} \StringTok{"mean"}\NormalTok{, }\AttributeTok{geom =} \StringTok{"line"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{stat\_summary}\NormalTok{(}
+    \AttributeTok{fun.data =} \StringTok{"mean\_cl\_boot"}\NormalTok{,}
+    \AttributeTok{fun.args =} \FunctionTok{list}\NormalTok{(}\AttributeTok{conf.int =} \FloatTok{0.95}\NormalTok{),}
+    \AttributeTok{geom =} \StringTok{"ribbon"}\NormalTok{,}
+    \AttributeTok{alpha =} \FloatTok{0.2}\NormalTok{,}
+    \AttributeTok{linetype =} \DecValTok{0}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{scale\_color\_manual}\NormalTok{(}\AttributeTok{values =}\NormalTok{ color\_pal) }\SpecialCharTok{+}
+  \FunctionTok{scale\_fill\_manual}\NormalTok{(}\AttributeTok{values =}\NormalTok{ color\_pal) }\SpecialCharTok{+}
+  \FunctionTok{theme}\NormalTok{(}
+    \AttributeTok{legend.position =} \StringTok{"bottom"}
+\NormalTok{  )}
+\FunctionTok{ggsave}\NormalTok{(}
+  \AttributeTok{file =} \FunctionTok{paste}\NormalTok{(}
+\NormalTok{    plot\_dir,}
+    \StringTok{"TransmissionRates\_successes\_verttrans\_plt.pdf"}\NormalTok{,}
+    \AttributeTok{sep =} \StringTok{"/"}
+\NormalTok{  ),}
+  \AttributeTok{plot =}\NormalTok{ TransmissionRates\_successes\_verttrans\_plt,}
+  \AttributeTok{width =} \DecValTok{8}\NormalTok{,}
+  \AttributeTok{height =} \DecValTok{8}
+\NormalTok{)}
+\NormalTok{TransmissionRates\_successes\_verttrans\_plt}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{supplemental-material_files/figure-latex/unnamed-chunk-85-1.pdf}
+
+\hypertarget{population-size-1}{%
+\section{Population size}\label{population-size-1}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{pop\_size\_summary }\OtherTok{\textless{}{-}}\NormalTok{ time\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{group\_by}\NormalTok{(}
+\NormalTok{    SEED,}
+\NormalTok{    sym\_condition}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{summarize}\NormalTok{(}
+    \AttributeTok{host\_pop\_size\_avg =} \FunctionTok{mean}\NormalTok{(OrgCounts\_host\_count),}
+    \AttributeTok{host\_pop\_size\_median =} \FunctionTok{median}\NormalTok{(OrgCounts\_host\_count),}
+    \AttributeTok{host\_pop\_size\_variance =} \FunctionTok{var}\NormalTok{(OrgCounts\_host\_count),}
+    \AttributeTok{sym\_pop\_size\_avg =} \FunctionTok{mean}\NormalTok{(OrgCounts\_hosted\_sym\_count),}
+    \AttributeTok{sym\_pop\_size\_median =} \FunctionTok{median}\NormalTok{(OrgCounts\_hosted\_sym\_count),}
+    \AttributeTok{sym\_pop\_size\_variance =} \FunctionTok{var}\NormalTok{(OrgCounts\_hosted\_sym\_count)}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{host-population-size-1}{%
+\subsection{Host population size}\label{host-population-size-1}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{host\_pop\_size\_ot\_plt }\OtherTok{\textless{}{-}}\NormalTok{ time\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{filter}\NormalTok{(update }\SpecialCharTok{\%\%} \DecValTok{1000} \SpecialCharTok{==} \DecValTok{0}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{ggplot}\NormalTok{(}
+    \FunctionTok{aes}\NormalTok{(}
+      \AttributeTok{x =}\NormalTok{ update,}
+      \AttributeTok{y =}\NormalTok{ OrgCounts\_host\_count,}
+      \AttributeTok{color =}\NormalTok{ sym\_condition,}
+      \AttributeTok{fill =}\NormalTok{ sym\_condition}
+\NormalTok{    )}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{stat\_summary}\NormalTok{(}\AttributeTok{fun =} \StringTok{"mean"}\NormalTok{, }\AttributeTok{geom =} \StringTok{"line"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{stat\_summary}\NormalTok{(}
+    \AttributeTok{fun.data =} \StringTok{"mean\_cl\_boot"}\NormalTok{,}
+    \AttributeTok{fun.args =} \FunctionTok{list}\NormalTok{(}\AttributeTok{conf.int =} \FloatTok{0.95}\NormalTok{),}
+    \AttributeTok{geom =} \StringTok{"ribbon"}\NormalTok{,}
+    \AttributeTok{alpha =} \FloatTok{0.2}\NormalTok{,}
+    \AttributeTok{linetype =} \DecValTok{0}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{scale\_color\_manual}\NormalTok{(}\AttributeTok{values =}\NormalTok{ color\_pal) }\SpecialCharTok{+}
+  \FunctionTok{scale\_fill\_manual}\NormalTok{(}\AttributeTok{values =}\NormalTok{ color\_pal) }\SpecialCharTok{+}
+  \FunctionTok{theme}\NormalTok{(}
+    \AttributeTok{legend.position =} \StringTok{"bottom"}
+\NormalTok{  )}
+\FunctionTok{ggsave}\NormalTok{(}
+  \AttributeTok{file =} \FunctionTok{paste}\NormalTok{(}
+\NormalTok{    plot\_dir,}
+    \StringTok{"host\_pop\_size\_ot\_plt.pdf"}\NormalTok{,}
+    \AttributeTok{sep =} \StringTok{"/"}
+\NormalTok{  ),}
+  \AttributeTok{plot =}\NormalTok{ host\_pop\_size\_ot\_plt,}
+  \AttributeTok{width =} \DecValTok{8}\NormalTok{,}
+  \AttributeTok{height =} \DecValTok{8}
+\NormalTok{)}
+\NormalTok{host\_pop\_size\_ot\_plt}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{supplemental-material_files/figure-latex/unnamed-chunk-87-1.pdf}
+
+\hypertarget{symbiont-population-size-1}{%
+\subsection{Symbiont population size}\label{symbiont-population-size-1}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{sym\_pop\_size\_ot\_plt }\OtherTok{\textless{}{-}}\NormalTok{ time\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{filter}\NormalTok{(update }\SpecialCharTok{\%\%} \DecValTok{1000} \SpecialCharTok{==} \DecValTok{0}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{ggplot}\NormalTok{(}
+    \FunctionTok{aes}\NormalTok{(}
+      \AttributeTok{x =}\NormalTok{ update,}
+      \AttributeTok{y =}\NormalTok{ OrgCounts\_hosted\_sym\_count,}
+      \AttributeTok{color =}\NormalTok{ sym\_condition,}
+      \AttributeTok{fill =}\NormalTok{ sym\_condition}
+\NormalTok{    )}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{stat\_summary}\NormalTok{(}\AttributeTok{fun =} \StringTok{"mean"}\NormalTok{, }\AttributeTok{geom =} \StringTok{"line"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{stat\_summary}\NormalTok{(}
+    \AttributeTok{fun.data =} \StringTok{"mean\_cl\_boot"}\NormalTok{,}
+    \AttributeTok{fun.args =} \FunctionTok{list}\NormalTok{(}\AttributeTok{conf.int =} \FloatTok{0.95}\NormalTok{),}
+    \AttributeTok{geom =} \StringTok{"ribbon"}\NormalTok{,}
+    \AttributeTok{alpha =} \FloatTok{0.2}\NormalTok{,}
+    \AttributeTok{linetype =} \DecValTok{0}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{scale\_color\_manual}\NormalTok{(}\AttributeTok{values =}\NormalTok{ color\_pal) }\SpecialCharTok{+}
+  \FunctionTok{scale\_fill\_manual}\NormalTok{(}\AttributeTok{values =}\NormalTok{ color\_pal) }\SpecialCharTok{+}
+  \FunctionTok{theme}\NormalTok{(}
+    \AttributeTok{legend.position =} \StringTok{"bottom"}
+\NormalTok{  )}
+\FunctionTok{ggsave}\NormalTok{(}
+  \AttributeTok{file =} \FunctionTok{paste}\NormalTok{(}
+\NormalTok{    plot\_dir,}
+    \StringTok{"sym\_pop\_size\_ot\_plt.pdf"}\NormalTok{,}
+    \AttributeTok{sep =} \StringTok{"/"}
+\NormalTok{  ),}
+  \AttributeTok{plot =}\NormalTok{ sym\_pop\_size\_ot\_plt,}
+  \AttributeTok{width =} \DecValTok{8}\NormalTok{,}
+  \AttributeTok{height =} \DecValTok{8}
+\NormalTok{)}
+\NormalTok{sym\_pop\_size\_ot\_plt}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{supplemental-material_files/figure-latex/unnamed-chunk-88-1.pdf}
+
+\hypertarget{manuscript-figures-1}{%
+\section{Manuscript figures}\label{manuscript-figures-1}}
+
+Read cure data in for combined manuscript figure.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{cure\_max\_task\_complexity\_data }\OtherTok{\textless{}{-}} \FunctionTok{read\_csv}\NormalTok{(}
+  \AttributeTok{file =} \FunctionTok{paste}\NormalTok{(}
+\NormalTok{    exp\_directory,}
+    \StringTok{"data"}\NormalTok{,}
+    \StringTok{"cure\_host\_max\_task\_complexity\_over\_time.csv"}\NormalTok{,}
+    \AttributeTok{sep =} \StringTok{"/"}
+\NormalTok{  )}
+\NormalTok{)}
+\NormalTok{cure\_max\_task\_complexity\_data }\OtherTok{\textless{}{-}}\NormalTok{ cure\_max\_task\_complexity\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}
+    \AttributeTok{cure\_condition =} \FunctionTok{factor}\NormalTok{(}
+\NormalTok{      cure\_condition,}
+      \AttributeTok{levels =} \FunctionTok{c}\NormalTok{(}\StringTok{"No symbionts"}\NormalTok{, }\StringTok{"25\%"}\NormalTok{, }\StringTok{"50\%"}\NormalTok{, }\StringTok{"75\%"}\NormalTok{, }\StringTok{"Not cured"}\NormalTok{),}
+      \AttributeTok{labels =} \FunctionTok{c}\NormalTok{(}\StringTok{"No sym."}\NormalTok{, }\StringTok{"25\%"}\NormalTok{, }\StringTok{"50\%"}\NormalTok{, }\StringTok{"75\%"}\NormalTok{, }\StringTok{"Never"}\NormalTok{)}
+\NormalTok{    )}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{host\_max\_task\_complexity\_data\_ci }\OtherTok{\textless{}{-}}\NormalTok{ host\_max\_task\_complexity\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{group\_by}\NormalTok{(}
+\NormalTok{    sym\_condition,}
+\NormalTok{    interaction\_multiplier}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{summarize}\NormalTok{(}
+    \AttributeTok{mean\_max\_task\_complexity =} \FunctionTok{mean}\NormalTok{(max\_task\_complexity),}
+    \AttributeTok{min\_max\_task\_complexity =} \FunctionTok{min}\NormalTok{(max\_task\_complexity),}
+    \AttributeTok{max\_max\_task\_complexity =} \FunctionTok{max}\NormalTok{(max\_task\_complexity),}
+    \AttributeTok{ci =} \FunctionTok{list}\NormalTok{(}
+      \FunctionTok{mean\_cl\_boot}\NormalTok{(}
+\NormalTok{        max\_task\_complexity,}
+        \AttributeTok{conf.int =} \FloatTok{0.99}\NormalTok{,}
+        \AttributeTok{B =} \DecValTok{10000}\NormalTok{,}
+\NormalTok{      ) }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{rename}\NormalTok{(}\AttributeTok{mean=}\NormalTok{y, }\AttributeTok{lwr=}\NormalTok{ymin, }\AttributeTok{upr=}\NormalTok{ymax)}
+\NormalTok{    )}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{unnest}\NormalTok{(}\AttributeTok{cols =} \FunctionTok{c}\NormalTok{(ci)) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{filter}\NormalTok{(}
+\NormalTok{    interaction\_multiplier }\SpecialCharTok{==} \StringTok{"4"}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}
+    \AttributeTok{sym\_condition =} \FunctionTok{factor}\NormalTok{(}
+\NormalTok{      sym\_condition,}
+      \AttributeTok{levels =} \FunctionTok{c}\NormalTok{(}\StringTok{"no{-}syms"}\NormalTok{, }\StringTok{"parasite"}\NormalTok{, }\StringTok{"mutualist"}\NormalTok{),}
+      \AttributeTok{labels =} \FunctionTok{c}\NormalTok{(}\StringTok{"No symbionts"}\NormalTok{, }\StringTok{"Parasites"}\NormalTok{, }\StringTok{"Mutualists"}\NormalTok{)}
+\NormalTok{    )}
+\NormalTok{  )}
+
+\NormalTok{dist\_data }\OtherTok{\textless{}{-}}\NormalTok{ host\_max\_task\_complexity\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{filter}\NormalTok{(interaction\_multiplier }\SpecialCharTok{==} \StringTok{"4"}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}
+    \AttributeTok{sym\_condition =} \FunctionTok{factor}\NormalTok{(}
+\NormalTok{      sym\_condition,}
+      \AttributeTok{levels =} \FunctionTok{c}\NormalTok{(}\StringTok{"no{-}syms"}\NormalTok{, }\StringTok{"parasite"}\NormalTok{, }\StringTok{"mutualist"}\NormalTok{),}
+      \AttributeTok{labels =} \FunctionTok{c}\NormalTok{(}\StringTok{"No symbionts"}\NormalTok{, }\StringTok{"Parasites"}\NormalTok{, }\StringTok{"Mutualists"}\NormalTok{)}
+\NormalTok{    )}
+\NormalTok{  )}
+
+\NormalTok{manuscript\_host\_task\_complexity\_plt }\OtherTok{\textless{}{-}}\NormalTok{ host\_max\_task\_complexity\_data\_ci }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{ggplot}\NormalTok{(}
+    \FunctionTok{aes}\NormalTok{(}
+      \AttributeTok{x =}\NormalTok{ sym\_condition,}
+      \AttributeTok{fill =}\NormalTok{ sym\_condition,}
+      \AttributeTok{y =}\NormalTok{ mean}
+\NormalTok{    )}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{geom\_bar}\NormalTok{(}\AttributeTok{stat =} \StringTok{"identity"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{geom\_point}\NormalTok{(}
+    \AttributeTok{data =}\NormalTok{ dist\_data,}
+    \AttributeTok{mapping =} \FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ sym\_condition, }\AttributeTok{y =}\NormalTok{ max\_task\_complexity),}
+    \AttributeTok{position =} \FunctionTok{position\_jitter}\NormalTok{(}\AttributeTok{width =}\NormalTok{ .}\DecValTok{4}\NormalTok{, }\AttributeTok{height =} \FloatTok{0.05}\NormalTok{),}
+    \AttributeTok{size =}\NormalTok{ .}\DecValTok{7}\NormalTok{,}
+    \AttributeTok{alpha =} \FloatTok{0.9}\NormalTok{,}
+    \AttributeTok{color =} \StringTok{"darkgray"}\NormalTok{,}
+    \AttributeTok{fill =} \StringTok{"darkgray"}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{geom\_linerange}\NormalTok{(}
+    \FunctionTok{aes}\NormalTok{(}
+      \AttributeTok{ymin =}\NormalTok{ lwr,}
+      \AttributeTok{ymax =}\NormalTok{ upr}
+\NormalTok{    ),}
+    \AttributeTok{alpha =} \FloatTok{0.9}\NormalTok{,}
+    \AttributeTok{linewidth =} \FloatTok{0.7}\NormalTok{,}
+    \AttributeTok{color =} \StringTok{"black"}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{scale\_x\_discrete}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{scale\_fill\_manual}\NormalTok{(}\AttributeTok{values=}\NormalTok{color\_pal) }\SpecialCharTok{+}
+  \FunctionTok{scale\_y\_continuous}\NormalTok{(}
+    \AttributeTok{limits =} \FunctionTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{, }\FloatTok{5.1}\NormalTok{)}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{labs}\NormalTok{(}
+    \AttributeTok{x =} \StringTok{"Symbiont type"}\NormalTok{,}
+    \AttributeTok{y =} \StringTok{"Mean function complexity"}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{theme}\NormalTok{(}
+    \AttributeTok{legend.position =} \StringTok{"none"}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{manuscript\_host\_parent\_entropy\_task\_sets\_plt }\OtherTok{\textless{}{-}}\NormalTok{ time\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{filter}\NormalTok{(}
+    \CommentTok{\# update \%\% 10000 == 0 \&}
+\NormalTok{    interaction\_multiplier }\SpecialCharTok{==} \StringTok{"4"}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}
+    \AttributeTok{sym\_condition =} \FunctionTok{factor}\NormalTok{(}
+\NormalTok{      sym\_condition,}
+      \AttributeTok{levels =} \FunctionTok{c}\NormalTok{(}\StringTok{"no{-}syms"}\NormalTok{, }\StringTok{"parasite"}\NormalTok{, }\StringTok{"mutualist"}\NormalTok{),}
+      \AttributeTok{labels =} \FunctionTok{c}\NormalTok{(}\StringTok{"No symbionts"}\NormalTok{, }\StringTok{"Parasites"}\NormalTok{, }\StringTok{"Mutualists"}\NormalTok{)}
+\NormalTok{    )}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{ggplot}\NormalTok{(}
+    \FunctionTok{aes}\NormalTok{(}
+      \AttributeTok{x =}\NormalTok{ update,}
+      \AttributeTok{y =}\NormalTok{ CurUpdate\_host\_parent\_entropy\_task\_sets,}
+      \AttributeTok{color =}\NormalTok{ sym\_condition,}
+      \AttributeTok{fill =}\NormalTok{ sym\_condition}
+\NormalTok{    )}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{stat\_summary}\NormalTok{(}\AttributeTok{fun =} \StringTok{"mean"}\NormalTok{, }\AttributeTok{geom =} \StringTok{"line"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{stat\_summary}\NormalTok{(}
+    \AttributeTok{fun.data =} \StringTok{"mean\_cl\_boot"}\NormalTok{,}
+    \AttributeTok{fun.args =} \FunctionTok{list}\NormalTok{(}\AttributeTok{conf.int =} \FloatTok{0.99}\NormalTok{),}
+    \AttributeTok{geom =} \StringTok{"ribbon"}\NormalTok{,}
+    \AttributeTok{alpha =} \FloatTok{0.2}\NormalTok{,}
+    \AttributeTok{linetype =} \DecValTok{0}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{scale\_fill\_manual}\NormalTok{(}
+    \AttributeTok{values =}\NormalTok{ color\_pal,}
+    \AttributeTok{limits =} \FunctionTok{c}\NormalTok{(}\StringTok{"No symbionts"}\NormalTok{, }\StringTok{"Parasites"}\NormalTok{, }\StringTok{"Mutualists"}\NormalTok{),}
+    \AttributeTok{labels =} \FunctionTok{c}\NormalTok{(}\StringTok{"None"}\NormalTok{, }\StringTok{"Par."}\NormalTok{, }\StringTok{"Mut."}\NormalTok{)}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{scale\_color\_manual}\NormalTok{(}
+    \AttributeTok{values =}\NormalTok{ color\_pal,}
+    \AttributeTok{limits =} \FunctionTok{c}\NormalTok{(}\StringTok{"No symbionts"}\NormalTok{, }\StringTok{"Parasites"}\NormalTok{, }\StringTok{"Mutualists"}\NormalTok{),}
+    \AttributeTok{labels =} \FunctionTok{c}\NormalTok{(}\StringTok{"None"}\NormalTok{, }\StringTok{"Par."}\NormalTok{, }\StringTok{"Mut."}\NormalTok{)}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{labs}\NormalTok{(}
+    \AttributeTok{x =} \StringTok{"Updates"}\NormalTok{,}
+    \AttributeTok{y =} \StringTok{"Shannon diversity"}\NormalTok{,}
+    \AttributeTok{color =} \StringTok{"Symbiont type"}\NormalTok{,}
+    \AttributeTok{fill =} \StringTok{"Symbiont type"}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{theme}\NormalTok{(}
+    \AttributeTok{legend.position =} \StringTok{"bottom"}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Define cure color palette}
+\CommentTok{\# {-} no{-}syms {-}\textgreater{} blue}
+\CommentTok{\# {-} magenta {-}\textgreater{} mutualist no cure}
+\CommentTok{\# {-} 25\% {-}\textgreater{} red}
+\CommentTok{\# {-} 50\% {-}\textgreater{} teal}
+\CommentTok{\# {-} 75\% {-}\textgreater{} grey}
+\NormalTok{cure\_color\_pal }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}
+\NormalTok{  vibrant\_colors[[}\StringTok{"blue"}\NormalTok{]],}
+\NormalTok{  vibrant\_colors[[}\StringTok{"red"}\NormalTok{]],}
+\NormalTok{  vibrant\_colors[[}\StringTok{"teal"}\NormalTok{]],}
+\NormalTok{  vibrant\_colors[[}\StringTok{"grey"}\NormalTok{]],}
+\NormalTok{  vibrant\_colors[[}\StringTok{"magenta"}\NormalTok{]]}
+\NormalTok{)}
+\NormalTok{cure\_host\_max\_task\_complexity\_over\_time\_plt }\OtherTok{\textless{}{-}}\NormalTok{ cure\_max\_task\_complexity\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{filter}\NormalTok{(}
+\NormalTok{    update }\SpecialCharTok{\%\%} \DecValTok{1000} \SpecialCharTok{==} \DecValTok{0}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{ggplot}\NormalTok{(}
+    \FunctionTok{aes}\NormalTok{(}
+      \AttributeTok{x =}\NormalTok{ update,}
+      \AttributeTok{y =}\NormalTok{ max\_task\_complexity,}
+      \AttributeTok{color =}\NormalTok{ cure\_condition,}
+      \AttributeTok{fill =}\NormalTok{ cure\_condition}
+\NormalTok{    )}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{stat\_summary}\NormalTok{(}\AttributeTok{fun =} \StringTok{"mean"}\NormalTok{, }\AttributeTok{geom =} \StringTok{"line"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{stat\_summary}\NormalTok{(}
+    \AttributeTok{fun.data =} \StringTok{"mean\_cl\_boot"}\NormalTok{,}
+    \AttributeTok{fun.args =} \FunctionTok{list}\NormalTok{(}\AttributeTok{conf.int =} \FloatTok{0.99}\NormalTok{),}
+    \AttributeTok{geom =} \StringTok{"ribbon"}\NormalTok{,}
+    \AttributeTok{alpha =} \FloatTok{0.2}\NormalTok{,}
+    \AttributeTok{linetype =} \DecValTok{0}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{scale\_fill\_manual}\NormalTok{(}
+    \AttributeTok{values =}\NormalTok{ cure\_color\_pal}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{scale\_color\_manual}\NormalTok{(}\AttributeTok{values =}\NormalTok{ cure\_color\_pal) }\SpecialCharTok{+}
+  \FunctionTok{scale\_y\_continuous}\NormalTok{(}
+    \AttributeTok{limits =} \FunctionTok{c}\NormalTok{(}\FloatTok{0.9}\NormalTok{, }\FloatTok{5.1}\NormalTok{)}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{labs}\NormalTok{(}
+    \AttributeTok{x =} \StringTok{"Updates"}\NormalTok{,}
+    \AttributeTok{y =} \StringTok{"Host function complexity"}\NormalTok{,}
+    \AttributeTok{color =} \StringTok{"Cure time"}\NormalTok{,}
+    \AttributeTok{fill =} \StringTok{"Cure time"}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{theme}\NormalTok{(}
+    \AttributeTok{legend.position =} \StringTok{"bottom"}
+\NormalTok{  )}
+
+\FunctionTok{ggsave}\NormalTok{(}
+  \AttributeTok{file =} \FunctionTok{paste}\NormalTok{(}
+\NormalTok{    plot\_dir,}
+    \StringTok{"cure\_host\_max\_task\_complexity\_over\_time\_plt.pdf"}\NormalTok{,}
+    \AttributeTok{sep =} \StringTok{"/"}
+\NormalTok{  ),}
+  \AttributeTok{plot =}\NormalTok{ cure\_host\_max\_task\_complexity\_over\_time\_plt,}
+  \AttributeTok{width =} \DecValTok{6}\NormalTok{,}
+  \AttributeTok{height =} \DecValTok{4}
+\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{combine-into-single-panel}{%
+\subsection{Combine into single panel}\label{combine-into-single-panel}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{plt\_grid\_with\_cure }\OtherTok{\textless{}{-}} \FunctionTok{plot\_grid}\NormalTok{(}
+\NormalTok{  manuscript\_host\_task\_complexity\_plt }\SpecialCharTok{+}
+    \FunctionTok{labs}\NormalTok{(}
+      \AttributeTok{x =} \StringTok{"Sym. type"}\NormalTok{,}
+      \AttributeTok{y =} \StringTok{"Host function complexity"}\NormalTok{,}
+      \AttributeTok{color =} \StringTok{"Sym. type"}\NormalTok{,}
+      \AttributeTok{fill =} \StringTok{"Sym. type"}
+\NormalTok{    ) }\SpecialCharTok{+}
+    \FunctionTok{scale\_x\_discrete}\NormalTok{(}
+      \AttributeTok{limits =} \FunctionTok{c}\NormalTok{(}\StringTok{"No symbionts"}\NormalTok{, }\StringTok{"Parasites"}\NormalTok{, }\StringTok{"Mutualists"}\NormalTok{),}
+      \AttributeTok{labels =} \FunctionTok{c}\NormalTok{(}\StringTok{"None"}\NormalTok{, }\StringTok{"Par."}\NormalTok{, }\StringTok{"Mut."}\NormalTok{)}
+\NormalTok{    ) }\SpecialCharTok{+}
+    \FunctionTok{theme}\NormalTok{(}
+      \AttributeTok{legend.position =} \StringTok{"none"}\NormalTok{,}
+      \AttributeTok{axis.title.y =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{size =} \DecValTok{10}\NormalTok{),}
+      \AttributeTok{axis.text.y =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{size =} \DecValTok{8}\NormalTok{),}
+      \AttributeTok{axis.title.x =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{size =} \DecValTok{10}\NormalTok{),}
+      \AttributeTok{axis.text.x =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{size =} \DecValTok{8}\NormalTok{)}
+\NormalTok{    ),}
+\NormalTok{  manuscript\_host\_parent\_entropy\_task\_sets\_plt }\SpecialCharTok{+}
+    \FunctionTok{labs}\NormalTok{(}
+      \AttributeTok{x =} \StringTok{"Update"}\NormalTok{,}
+      \AttributeTok{y =} \StringTok{"Shannon diversity"}\NormalTok{,}
+      \AttributeTok{color =} \StringTok{"Sym. type"}\NormalTok{,}
+      \AttributeTok{fill =} \StringTok{"Sym. type"}
+\NormalTok{    ) }\SpecialCharTok{+}
+    \FunctionTok{theme}\NormalTok{(}
+      \AttributeTok{legend.position =} \StringTok{"bottom"}\NormalTok{,}
+      \AttributeTok{legend.title =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{size =} \DecValTok{10}\NormalTok{),}
+      \AttributeTok{legend.text =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{size =} \DecValTok{8}\NormalTok{),}
+      \AttributeTok{axis.title.y =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{size =} \DecValTok{10}\NormalTok{),}
+      \AttributeTok{axis.text.y =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{size =} \DecValTok{8}\NormalTok{),}
+      \AttributeTok{axis.title.x =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{size =} \DecValTok{10}\NormalTok{),}
+      \AttributeTok{axis.text.x =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{size =} \DecValTok{8}\NormalTok{)}
+\NormalTok{    ),}
+\NormalTok{  cure\_host\_max\_task\_complexity\_over\_time\_plt }\SpecialCharTok{+}
+    \FunctionTok{theme}\NormalTok{(}
+      \AttributeTok{legend.position =} \StringTok{"right"}\NormalTok{,}
+      \AttributeTok{legend.title =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{size =} \DecValTok{10}\NormalTok{),}
+      \AttributeTok{legend.text =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{size =} \DecValTok{8}\NormalTok{),}
+      \AttributeTok{axis.title.y =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{size =} \DecValTok{10}\NormalTok{),}
+      \AttributeTok{axis.text.y =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{size =} \DecValTok{8}\NormalTok{),}
+      \AttributeTok{axis.title.x =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{size =} \DecValTok{10}\NormalTok{),}
+      \AttributeTok{axis.text.x =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{size =} \DecValTok{8}\NormalTok{)}
+\NormalTok{    ),}
+  \AttributeTok{nrow =} \DecValTok{1}\NormalTok{,}
+  \AttributeTok{ncol =} \DecValTok{3}\NormalTok{,}
+  \AttributeTok{align =} \StringTok{"h"}\NormalTok{,}
+  \AttributeTok{labels =} \FunctionTok{c}\NormalTok{(}\StringTok{"A)"}\NormalTok{, }\StringTok{"B)"}\NormalTok{, }\StringTok{"C)"}\NormalTok{),}
+  \AttributeTok{label\_size =} \DecValTok{10}\NormalTok{,}
+  \AttributeTok{rel\_widths =} \FunctionTok{c}\NormalTok{(}\FloatTok{0.2}\NormalTok{, }\FloatTok{0.38}\NormalTok{, }\FloatTok{0.42}\NormalTok{)}
+\NormalTok{)}
+\NormalTok{plt\_grid\_with\_cure}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{supplemental-material_files/figure-latex/unnamed-chunk-93-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{save\_plot}\NormalTok{(}
+  \AttributeTok{filename =} \FunctionTok{paste}\NormalTok{(}
+\NormalTok{    plot\_dir,}
+    \StringTok{"fig{-}diff{-}rewards{-}panel{-}with{-}cure.pdf"}\NormalTok{,}
+    \AttributeTok{sep =} \StringTok{"/"}
+\NormalTok{  ),}
+  \AttributeTok{plot =}\NormalTok{ plt\_grid\_with\_cure,}
+  \AttributeTok{base\_width =} \DecValTok{8}\NormalTok{,}
+  \AttributeTok{base\_height =} \FloatTok{3.5}\NormalTok{,}
+  \AttributeTok{dpi =} \DecValTok{600}
 \NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
