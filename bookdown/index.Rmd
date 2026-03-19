@@ -36,8 +36,14 @@ Our supplemental material includes the following:
   (Section \@ref(data-availability))
 - Local compilation instructions
   (Section \@ref(compilation-instructions))
-
-TODO
+- Experiment analyses
+  - Flat rewards experiment (Section \@ref(equal-function-rewards))
+  - Differential rewards experiments (Section \@ref())
+  - Experiments characterizing when mutualism constrains host complexity:
+    - Varying environmental rewards for complex functions (Section \@ref(environment-strength))
+    - Varying mutualist donate proportion (Section \@ref(mutualist-donate-proportion-experiment))
+    - Varying symbiont interaction synergy factor (Section \@ref(synergy-factor))
+    - Varying function restrictions (Section \@ref(host-symbiont-trait-permissibility))
 
 ## Contributing authors
 
