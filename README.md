@@ -19,4 +19,10 @@ This repository is associated with our 2026 Artificial Life Conference submissio
 
 ## Repository guide
 
-TODO
+- `bookdown/` - Contains Bookdown build files for generating the web-based supplemental material.
+- `docs/` - Contains supplemental documentation, including data availability, local compilation instructions, and a description of the instruction set used by digital organisms.
+- `experiments/` - Contains experiment configuration files, HPC job submission scripts, data analyses, and generated plots.
+- `hpc-env/` - Contains bash scripts for configuring HPC software environments for running experiments.
+- `scripts/` - Contains Python scripts and utilities used for data analyses / managing experiments.
+- `third-party/` - Contains Symbulation software as a git submodule.
+- `web-supplement/` - Contains the compiled web-based supplemental material.
