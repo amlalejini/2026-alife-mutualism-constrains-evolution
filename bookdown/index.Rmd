@@ -1,0 +1,52 @@
+---
+title: "Supplemental Material for Mutualism can constrain host diversity and evolution"
+author: ""
+date: "`r Sys.Date()`"
+output: bookdown::gitbook
+documentclass: book
+bibliography: ["packages.bib", "supplemental.bib"]
+biblio-style: apalike
+nocite: '@*'
+link-citations: yes
+github-repo: amlalejini/2026-alife-mutualism-constrains-evolution
+description: "Supplemental material"
+---
+
+```{r, include=FALSE}
+bookdown_wd_prefix <- "../"
+bookdown_build <- TRUE
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+```
+
+# Introduction
+
+This is the supplemental material our 2026 Artificial Life Conference submission, "Mutualism can constrain host diversity and evolution".
+This is not intended as a stand-alone document, but as a companion to our main manuscript.
+
+## About our supplemental material
+
+Our supplemental material is hosted using [GitHub pages](https://pages.github.com/).
+We compiled our data analyses and supplemental documentation into this web-accessible book using [bookdown](https://bookdown.org).
+
+The source code and configuration files for this supplemental material can be found in [this GitHub repository](https://github.com/amlalejini/2026-alife-mutualism-constrains-evolution).
+
+Our supplemental material includes the following:
+
+- Data availability
+  (Section \@ref(data-availability))
+- Local compilation instructions
+  (Section \@ref(compilation-instructions))
+
+TODO
+
+## Contributing authors
+
+- Delaney Kelley
+- Owen Hillary
+- Elias Hillman-Emelianoff
+- Ahmad Khalili
+- Emma Zhang
+- Kiara M. Johnson
+- [Emily Dolson](https://ecodelab.com/)
+- [Anya E. Vostinar](https://anyaevostinar.github.io/)
+- [Alexander Lalejini](https://lalejini.com)
