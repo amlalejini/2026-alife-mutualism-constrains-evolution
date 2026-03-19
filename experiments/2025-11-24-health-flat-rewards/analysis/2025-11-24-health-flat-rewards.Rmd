@@ -486,6 +486,31 @@ ggsave(
 )
 ```
 
+Statistical tests
+
+```{r}
+kw_test <- host_max_task_complexity_data %>%
+  group_by(interaction_multiplier) %>%
+  rstatix::kruskal_test(max_task_complexity ~ sym_condition)
+kw_test
+```
+
+```{r}
+# Grab group names of significant comparisons
+# sig_kw_groups <- filter(kw_test, p < 0.05)$interaction_multiplier
+
+stats_data <- filter(
+  host_max_task_complexity_data,
+  interaction_multiplier == "4"
+)
+pairwise.wilcox.test(
+  x = stats_data$max_task_complexity,
+  g = stats_data$sym_condition,
+  p.adjust.method = "bonferroni",
+  exact = FALSE
+)
+```
+
 ### Symbionts
 
 Quantify whether tasks have been performed over course of entire run.
@@ -785,6 +810,29 @@ ggsave(
 )
 ```
 
+```{r}
+kw_test <- summary_data %>%
+  group_by(interaction_multiplier) %>%
+  rstatix::kruskal_test(CurUpdate_host_parent_entropy_task_sets ~ sym_condition)
+kw_test
+```
+
+```{r}
+# Grab group names of significant comparisons
+# sig_kw_groups <- filter(kw_test, p < 0.05)$interaction_multiplier
+
+stats_data <- filter(
+  summary_data,
+  interaction_multiplier == "4"
+)
+pairwise.wilcox.test(
+  x = stats_data$CurUpdate_host_parent_entropy_task_sets,
+  g = stats_data$sym_condition,
+  p.adjust.method = "bonferroni",
+  exact = FALSE
+)
+```
+
 ### Symbiont diversity
 
 #### Symbiont number of task sets
@@ -957,7 +1005,7 @@ host_avg_gens_elapsed_plt <- summary_data %>%
     aes(x = treatment, fill = treatment, y = CurUpdate_host_mean_generations)
   ) +
   geom_point(
-    mapping=aes(color = treatment),
+    mapping = aes(color = treatment),
     position = position_jitter(width = .15),
     size = .5,
     alpha = 0.8
@@ -980,6 +1028,45 @@ ggsave(
   plot = host_avg_gens_elapsed_plt,
   width = 10,
   height = 10
+)
+```
+
+```{r}
+summary_data %>%
+  # filter(interaction_multiplier == "4") %>%
+  group_by(
+    sym_condition,
+    interaction_multiplier
+  ) %>%
+  summarise(
+    mean_gens = mean(CurUpdate_host_mean_generations),
+    median_gens = median(CurUpdate_host_mean_generations),
+    var_gens = var(CurUpdate_host_mean_generations),
+    sdev_gens = sd(CurUpdate_host_mean_generations)
+  ) %>%
+  filter(interaction_multiplier == "4")
+```
+
+```{r}
+kw_test <- summary_data %>%
+  group_by(interaction_multiplier) %>%
+  rstatix::kruskal_test(CurUpdate_host_mean_generations ~ sym_condition)
+kw_test
+```
+
+```{r}
+# Grab group names of significant comparisons
+# sig_kw_groups <- filter(kw_test, p < 0.05)$interaction_multiplier
+
+stats_data <- filter(
+  summary_data,
+  interaction_multiplier == "4"
+)
+pairwise.wilcox.test(
+  x = stats_data$CurUpdate_host_mean_generations,
+  g = stats_data$sym_condition,
+  p.adjust.method = "bonferroni",
+  exact = FALSE
 )
 ```
 
@@ -1015,6 +1102,22 @@ ggsave(
   width = 10,
   height = 10
 )
+```
+
+```{r}
+summary_data %>%
+  # filter(interaction_multiplier == "4") %>%
+  group_by(
+    sym_condition,
+    interaction_multiplier
+  ) %>%
+  summarise(
+    mean_gens = mean(CurUpdate_sym_mean_generations),
+    median_gens = median(CurUpdate_sym_mean_generations),
+    var_gens = var(CurUpdate_sym_mean_generations),
+    sdev_gens = sd(CurUpdate_sym_mean_generations)
+  ) %>%
+  filter(interaction_multiplier == "4")
 ```
 
 ## Transmission
@@ -1326,7 +1429,8 @@ for (trt in treatments) {
 Average host task complexity
 
 ```{r}
-manuscript_host_task_complexity_plt <- host_max_task_complexity_data %>%
+
+host_max_task_complexity_data_ci <- host_max_task_complexity_data %>%
   group_by(
     treatment,
     sym_condition,
@@ -1335,7 +1439,18 @@ manuscript_host_task_complexity_plt <- host_max_task_complexity_data %>%
   summarize(
     mean_max_task_complexity = mean(max_task_complexity),
     min_max_task_complexity = min(max_task_complexity),
-    max_max_task_complexity = max(max_task_complexity)
+    max_max_task_complexity = max(max_task_complexity),
+    ci = list(
+      mean_cl_boot(
+        max_task_complexity,
+        conf.int = 0.99,
+        B = 10000,
+      ) %>% rename(mean=y, lwr=ymin, upr=ymax)
+    )
+  ) %>%
+  unnest(cols = c(ci)) %>%
+  filter(
+    interaction_multiplier == "4"
   ) %>%
   mutate(
     sym_condition = factor(
@@ -1343,7 +1458,20 @@ manuscript_host_task_complexity_plt <- host_max_task_complexity_data %>%
       levels = c("no-syms", "parasite", "mutualist"),
       labels = c("No symbionts", "Parasites", "Mutualists")
     )
-  ) %>%
+  )
+
+dist_data <- host_max_task_complexity_data %>%
+  filter(interaction_multiplier == "4") %>%
+  mutate(
+    sym_condition = factor(
+      sym_condition,
+      levels = c("no-syms", "parasite", "mutualist"),
+      labels = c("No symbionts", "Parasites", "Mutualists")
+    )
+  )
+v <- color("vibrant")(7)
+color_pal <- c(v[["blue"]], v[["orange"]], v[["magenta"]])
+manuscript_host_task_complexity_plt <- host_max_task_complexity_data_ci %>%
   filter(interaction_multiplier == "4") %>%
   ggplot(
     aes(
@@ -1352,33 +1480,50 @@ manuscript_host_task_complexity_plt <- host_max_task_complexity_data %>%
       y = mean_max_task_complexity
     )
   ) +
-  geom_bar(stat = "identity", alpha = 0.7) +
-  geom_pointrange(
+  geom_bar(stat = "identity") +
+  geom_point(
+    data = dist_data,
+    mapping = aes(x = sym_condition, y = max_task_complexity),
+    position = position_jitter(width = .4, height = 0.05),
+    size = .7,
+    alpha = 0.9,
+    color = "darkgray",
+    fill = "darkgray"
+  ) +
+  geom_linerange(
     aes(
-      ymin = min_max_task_complexity,
-      ymax = max_max_task_complexity
+      ymin = lwr,
+      ymax = upr
     ),
     alpha = 0.9,
-    size = 0.5
+    linewidth = 0.7,
+    color = "black"
   ) +
-  scale_x_discrete() +
-  scale_fill_bright() +
+  scale_x_discrete(
+    limits = c("No symbionts", "Parasites", "Mutualists"),
+    labels = c("None", "Par.", "Mut.")
+  ) +
+  # scale_fill_bright() +
+  # scale_fill_highcontrast() +
+  # scale_fill_vibrant() +
+  scale_fill_manual(values = color_pal) +
   labs(
-    x = "Symbiont type",
-    y = "Mean function complexity"
+    x = "Sym. type",
+    y = "Host function complexity"
   ) +
-  # facet_wrap(~interaction_multiplier) +
   theme(
-    legend.position = "none"
-    # axis.text.x = element_text(
-    #   angle = 45,
-    #   hjust = 1
-    # )
+    legend.position = "none",
+    axis.title.y = element_text(size = 10),
+    axis.text.y = element_text(size = 8),
+    axis.title.x = element_text(size = 10),
+    axis.text.x = element_text(size = 8)
   )
+
+
 ggsave(
-  file = paste(plot_dir, "manuscript_host_task_complexity_plt.pdf", sep = "/"),
+  file = paste(plot_dir, "manuscript_flat_rewards_host_task_complexity_plt.pdf", sep = "/"),
   plot = manuscript_host_task_complexity_plt,
-  width = 4,
-  height = 4
+  width = 3,
+  height = 3
 )
 ```

@@ -1,4 +1,4 @@
-# 2025-12-09 - Health mode big task rewards
+# 2026-02-23 - Health mode - task credit
 
 ## Dependencies and setup
 
@@ -17,7 +17,7 @@ library(viridis)
 ```{r}
 # Build relative path from R's working directory to what is actually the working
 # directory for this experiment.
-experiment_slug <- "2025-12-09-health-big-rewards"
+experiment_slug <- "2026-02-23-health-task-credit"
 working_directory <- paste(
   "experiments",
   experiment_slug,
@@ -74,7 +74,7 @@ summary_data <- summary_data %>%
     PARASITE_CYCLE_STEAL_MULTIPLIER = as.factor(PARASITE_CYCLE_STEAL_MULTIPLIER), # nolint: line_length_linter.
     HOST_ONLY_FIRST_TASK_CREDIT = as.factor(HOST_ONLY_FIRST_TASK_CREDIT),
     SYM_ONLY_FIRST_TASK_CREDIT = as.factor(SYM_ONLY_FIRST_TASK_CREDIT),
-    TASK_ENV_CFG_PATH = as.factor(TASK_ENV_CFG_PATH)
+    MUTUALIST_CYCLE_GAIN_PROP = as.factor(MUTUALIST_CYCLE_GAIN_PROP)
   ) %>%
   mutate(
     task_credit = paste0(
@@ -87,24 +87,12 @@ summary_data <- summary_data %>%
       START_MOI == "1" & HEALTH_TYPE == "mutualist" ~ "mutualist",
       .default = "unknown" # precaution against unexpected parameterizations
     ),
-    interaction_multiplier = as.factor(PARASITE_CYCLE_STEAL_MULTIPLIER),
-    environment = case_when(
-      TASK_ENV_CFG_PATH == "environment-rewards-2.json" ~ "x2",
-      TASK_ENV_CFG_PATH == "environment-rewards-4.json" ~ "x4",
-      TASK_ENV_CFG_PATH == "environment-rewards-8.json" ~ "x8",
-      TASK_ENV_CFG_PATH == "environment-rewards-16.json" ~ "x16",
-      .default = "unknown"
-    )
+    interaction_multiplier = as.factor(PARASITE_CYCLE_STEAL_MULTIPLIER)
   ) %>%
   mutate(
     treatment = paste0(
       sym_condition,
-      "_E=", environment,
-      "_IM=", interaction_multiplier
-    ),
-    environment = factor(
-      environment,
-      levels = c("x2", "x4", "x8", "x16")
+      "_", task_credit
     )
   ) %>%
   mutate(
@@ -132,9 +120,8 @@ time_data <- time_data %>%
     START_MOI = as.factor(START_MOI),
     VERTICAL_TRANSMISSION = as.factor(VERTICAL_TRANSMISSION),
     HEALTH_TYPE = as.factor(HEALTH_TYPE),
-    MUTUALIST_CYCLE_DONATE_MULTIPLIER = as.factor(MUTUALIST_CYCLE_DONATE_MULTIPLIER), # nolint: line_length_linter.
-    PARASITE_CYCLE_STEAL_MULTIPLIER = as.factor(PARASITE_CYCLE_STEAL_MULTIPLIER), # nolint: line_length_linter.
-    TASK_ENV_CFG_PATH = as.factor(TASK_ENV_CFG_PATH)
+    HOST_ONLY_FIRST_TASK_CREDIT = as.factor(HOST_ONLY_FIRST_TASK_CREDIT),
+    SYM_ONLY_FIRST_TASK_CREDIT = as.factor(SYM_ONLY_FIRST_TASK_CREDIT)
   ) %>%
   mutate(
     sym_condition = case_when(
@@ -143,24 +130,15 @@ time_data <- time_data %>%
       START_MOI == "1" & HEALTH_TYPE == "mutualist" ~ "mutualist",
       .default = "unknown" # precaution against unexpected parameterizations
     ),
-    interaction_multiplier = as.factor(PARASITE_CYCLE_STEAL_MULTIPLIER),
-    environment = case_when(
-      TASK_ENV_CFG_PATH == "environment-rewards-2.json" ~ "x2",
-      TASK_ENV_CFG_PATH == "environment-rewards-4.json" ~ "x4",
-      TASK_ENV_CFG_PATH == "environment-rewards-8.json" ~ "x8",
-      TASK_ENV_CFG_PATH == "environment-rewards-16.json" ~ "x16",
-      .default = "unknown"
+    task_credit = paste0(
+      "H", HOST_ONLY_FIRST_TASK_CREDIT,
+      "S", SYM_ONLY_FIRST_TASK_CREDIT
     )
   ) %>%
   mutate(
     treatment = paste0(
       sym_condition,
-      "_E=", environment,
-      "_IM=", interaction_multiplier
-    ),
-    environment = factor(
-      environment,
-      levels = c("x2", "x4", "x8", "x16")
+      "_", task_credit
     )
   ) %>%
   mutate(
@@ -236,6 +214,7 @@ save_kable(
 
 ### Hosts
 
+
 Quantify whether tasks have been performed over course of entire run.
 
 ```{r}
@@ -246,8 +225,7 @@ host_over_time_parent_task_data <- time_data %>%
     SEED,
     treatment,
     sym_condition,
-    interaction_multiplier,
-    environment,
+    task_credit,
     update,
     CurUpdate_AND_NOT_in_host_parent_org_counts,
     CurUpdate_AND_in_host_parent_org_counts,
@@ -287,16 +265,28 @@ host_over_time_parent_task_data <- time_data %>%
       levels = tasks,
       labels = tasks
     )
+  ) %>%
+  mutate(
+    task_complexity = case_when(
+      task == "NOT" ~ 1,
+      task == "NAND" ~ 1,
+      task == "OR_NOT" ~ 2,
+      task == "AND" ~ 2,
+      task == "OR" ~ 3,
+      task == "AND_NOT" ~ 3,
+      task == "NOR" ~ 4,
+      task == "XOR" ~ 4,
+      task == "EQU" ~ 5,
+      .default = -1
+    )
   )
 
 host_parent_tasks_all_time_by_task <- host_over_time_parent_task_data %>%
-  # filter(update <= 100000) %>%
   group_by(
     SEED,
     treatment,
     sym_condition,
-    interaction_multiplier,
-    environment,
+    task_credit,
     task
   ) %>%
   summarize(
@@ -307,8 +297,7 @@ host_parent_tasks_all_time_by_task <- host_over_time_parent_task_data %>%
   group_by(
     treatment,
     sym_condition,
-    interaction_multiplier,
-    environment,
+    task_credit,
     task
   ) %>%
   summarize(
@@ -318,8 +307,36 @@ host_parent_tasks_all_time_by_task <- host_over_time_parent_task_data %>%
 
 ```
 
+Additionally, summarize by task complexity level.
+
 ```{r}
-host_parent_tasks_all_time_by_task <- host_parent_tasks_all_time_by_task %>%
+host_max_task_complexity_data <- host_over_time_parent_task_data %>%
+  group_by(
+    SEED,
+    treatment,
+    sym_condition,
+    task_credit,
+    task,
+    task_complexity
+  ) %>%
+  summarize(
+    n = n(),
+    parent_task_completed_ever = any(task_completed_by_parent)
+  ) %>%
+  ungroup() %>%
+  # This filter works fine because all replicates start with a task
+  filter(
+    parent_task_completed_ever
+  ) %>%
+  group_by(
+    SEED,
+    treatment,
+    sym_condition,
+    task_credit
+  ) %>%
+  summarize(
+    max_task_complexity = max(task_complexity)
+  ) %>%
   mutate(
     sym_condition = factor(
       sym_condition,
@@ -330,6 +347,43 @@ host_parent_tasks_all_time_by_task <- host_parent_tasks_all_time_by_task %>%
       )
     )
   )
+
+
+```
+
+Task complexity over time
+
+```{r}
+host_max_task_complexity_over_time_data <- host_over_time_parent_task_data %>%
+  # This filter works fine because all replicates start with a task
+  filter(
+    task_completed_by_parent
+  ) %>%
+  group_by(
+    SEED,
+    treatment,
+    sym_condition,
+    task_credit,
+    update
+  ) %>%
+  summarize(
+    max_task_complexity = max(task_complexity)
+  ) %>%
+  mutate(
+    sym_condition = factor(
+      sym_condition,
+      levels = c(
+        "no-syms",
+        "parasite",
+        "mutualist"
+      )
+    )
+  )
+```
+
+#### Host parent tasks all time (by task)
+
+```{r}
 host_parent_tasks_all_time_by_task_plt <- host_parent_tasks_all_time_by_task %>%
   ggplot(
     aes(
@@ -349,14 +403,12 @@ host_parent_tasks_all_time_by_task_plt <- host_parent_tasks_all_time_by_task %>%
     vjust = -0.5,
     size = 2
   ) +
-  scale_color_bright() +
-  scale_fill_bright() +
   scale_x_discrete() +
   scale_y_continuous(
     limits = c(0, 51)
   ) +
-  facet_grid(
-    interaction_multiplier~environment,
+  facet_wrap(
+    ~ task_credit,
     axes = "all_x",
     labeller = label_both
   ) +
@@ -375,56 +427,87 @@ ggsave(
 )
 ```
 
-Total different tasks (all time)
+#### Host task complexity evolved
 
 ```{r}
-host_total_different_parent_tasks_all_time <- host_over_time_parent_task_data %>%
-  group_by(
-    SEED,
-    treatment,
-    sym_condition,
-    interaction_multiplier,
-    environment,
-    task
-  ) %>%
-  # Summarize across updates whether task was ever completed by a parent.
-  summarize(
-    n = n(),
-    parent_task_completed_ever = any(task_completed_by_parent)
-  ) %>%
-  ungroup() %>%
-  group_by(
-    SEED,
-    treatment,
-    sym_condition,
-    environment,
-    interaction_multiplier,
-  ) %>%
-  # Summarize across tasks (by seed)
-  summarize(
-    n = n(),
-    num_parent_tasks_completed_ever = sum(parent_task_completed_ever == TRUE)
+host_max_task_complexity_plt <- host_max_task_complexity_data %>%
+  ggplot(
+    aes(x = sym_condition, fill = sym_condition, y = max_task_complexity)
+  ) +
+  geom_point(
+    mapping=aes(color = sym_condition),
+    position = position_jitter(width = .15),
+    size = .5,
+    alpha = 0.8
+  ) +
+  geom_boxplot(
+    width = .1,
+    outlier.shape = NA,
+    alpha = 0.5
+  ) +
+  scale_x_discrete() +
+  facet_grid(
+    ~ task_credit,
+    axes = "all_x"
+  ) +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_text(
+      angle = 60,
+      hjust = 1
+    )
   )
-```
-
-Average number of different tasks evolved?
-
-```{r}
-host_avg_tasks_table <- host_total_different_parent_tasks_all_time %>%
-  group_by(treatment) %>%
-  summarize(avg_diff_num_host_parent_tasks = mean(num_parent_tasks_completed_ever)) %>%
-  arrange(desc(avg_diff_num_host_parent_tasks)) %>%
-  kable() %>%
-  kable_styling(latex_options = "striped")
-save_kable(
-  host_avg_tasks_table,
-  paste(
-    plot_dir,
-    "host_avg_diff_num_host_parent_tasks.pdf",
-    sep = "/"
-  )
+ggsave(
+  file = paste(plot_dir, "host_max_task_complexity_plt.pdf", sep = "/"),
+  plot = host_max_task_complexity_plt,
+  width = 10,
+  height = 10
 )
 ```
+
+Task complexity over time
+
+```{r}
+host_max_task_complexity_over_time_plt <- host_max_task_complexity_over_time_data %>%
+  filter(update %% 500 == 0) %>%
+  ggplot(
+    aes(
+      x = update,
+      y = max_task_complexity,
+      color = sym_condition,
+      fill = sym_condition
+    )
+  ) +
+  stat_summary(fun = "mean", geom = "line") +
+  stat_summary(
+    fun.data = "mean_cl_boot",
+    fun.args = list(conf.int = 0.95),
+    geom = "ribbon",
+    alpha = 0.2,
+    linetype = 0
+  ) +
+  scale_color_bright() +
+  scale_fill_bright() +
+  facet_grid(
+    ~ task_credit,
+    axes = "all_x"
+  ) +
+  theme(
+    legend.position = "bottom"
+  )
+
+ggsave(
+  file = paste(
+    plot_dir,
+    "host_max_task_complexity_over_time_plt.pdf",
+    sep = "/"
+  ),
+  plot = host_max_task_complexity_over_time_plt,
+  width = 15,
+  height = 15
+)
+```
+
 
 ### Symbionts
 
@@ -438,8 +521,7 @@ over_time_sym_parent_task_data <- time_data %>%
     SEED,
     treatment,
     sym_condition,
-    interaction_multiplier,
-    environment,
+    task_credit,
     update,
     CurUpdate_AND_NOT_in_sym_parent_org_counts,
     CurUpdate_AND_in_sym_parent_org_counts,
@@ -486,8 +568,7 @@ sym_parent_tasks_all_time_by_task <- over_time_sym_parent_task_data %>%
     SEED,
     treatment,
     sym_condition,
-    environment,
-    interaction_multiplier,
+    task_credit,
     task
   ) %>%
   summarize(
@@ -498,8 +579,7 @@ sym_parent_tasks_all_time_by_task <- over_time_sym_parent_task_data %>%
   group_by(
     treatment,
     sym_condition,
-    interaction_multiplier,
-    environment,
+    task_credit,
     task
   ) %>%
   summarize(
@@ -510,17 +590,7 @@ sym_parent_tasks_all_time_by_task <- over_time_sym_parent_task_data %>%
 ```
 
 ```{r}
-sym_parent_tasks_all_time_by_task <- sym_parent_tasks_all_time_by_task %>%
-  mutate(
-    sym_condition = factor(
-      sym_condition,
-      levels = c(
-        "no-syms",
-        "parasite",
-        "mutualist"
-      )
-    )
-  )
+
 sym_parent_tasks_all_time_by_task_plt <- sym_parent_tasks_all_time_by_task %>%
   ggplot(
     aes(
@@ -546,8 +616,8 @@ sym_parent_tasks_all_time_by_task_plt <- sym_parent_tasks_all_time_by_task %>%
   scale_y_continuous(
     limits = c(0, 51)
   ) +
-  facet_grid(
-    interaction_multiplier~environment,
+  facet_wrap(
+    ~ task_credit,
     axes = "all_x",
     labeller = label_both
   ) +
@@ -593,8 +663,8 @@ host_parent_num_task_sets_plt <- time_data %>%
   ) +
   scale_color_bright() +
   scale_fill_bright() +
-  facet_grid(
-    environment~interaction_multiplier,
+  facet_wrap(
+    ~ task_credit,
     axes = "all_x",
     labeller = label_both
   ) +
@@ -606,363 +676,6 @@ ggsave(
   plot = host_parent_num_task_sets_plt,
   width = 15,
   height = 15
-)
-```
-
-#### Host entropy of task sets
-
-```{r}
-host_parent_entropy_task_sets_plt <- time_data %>%
-  filter(update %% 500 == 0) %>%
-  ggplot(
-    aes(
-      x = update,
-      y = CurUpdate_host_parent_entropy_task_sets,
-      color = sym_condition,
-      fill = sym_condition
-    )
-  ) +
-  stat_summary(fun = "mean", geom = "line") +
-  stat_summary(
-    fun.data = "mean_cl_boot",
-    fun.args = list(conf.int = 0.95),
-    geom = "ribbon",
-    alpha = 0.2,
-    linetype = 0
-  ) +
-  scale_color_bright() +
-  scale_fill_bright() +
-  facet_grid(
-    environment~interaction_multiplier,
-    axes = "all_x",
-    labeller = label_both
-  ) +
-  theme(
-    legend.position = "bottom"
-  )
-ggsave(
-  file = paste(plot_dir, "host_parent_entropy_task_sets_plt.pdf", sep = "/"),
-  plot = host_parent_entropy_task_sets_plt,
-  width = 15,
-  height = 15
-)
-```
-
-### Symbiont diversity
-
-#### Symbiont number of task sets
-
-```{r}
-symbiont_parent_num_task_sets_plt <- time_data %>%
-  filter(update %% 500 == 0) %>%
-  ggplot(
-    aes(
-      x = update,
-      y = CurUpdate_sym_parent_num_task_sets,
-      color = sym_condition,
-      fill = sym_condition
-    )
-  ) +
-  stat_summary(fun = "mean", geom = "line") +
-  stat_summary(
-    fun.data = "mean_cl_boot",
-    fun.args = list(conf.int = 0.95),
-    geom = "ribbon",
-    alpha = 0.2,
-    linetype = 0
-  ) +
-  scale_color_bright() +
-  scale_fill_bright() +
-  facet_grid(
-    environment ~ interaction_multiplier,
-    axes = "all_x",
-    labeller = label_both
-  ) +
-  theme(
-    legend.position = "bottom"
-  )
-ggsave(
-  file = paste(plot_dir, "symbiont_parent_num_task_sets_plt.pdf", sep = "/"),
-  plot = symbiont_parent_num_task_sets_plt,
-  width = 15,
-  height = 15
-)
-```
-
-#### Symbiont entropy of task sets
-
-```{r}
-symbiont_parent_entropy_task_sets_plt <- time_data %>%
-  filter(update %% 500 == 0) %>%
-  ggplot(
-    aes(
-      x = update,
-      y = CurUpdate_sym_parent_entropy_task_sets,
-      color = sym_condition,
-      fill = sym_condition
-    )
-  ) +
-  stat_summary(fun = "mean", geom = "line") +
-  stat_summary(
-    fun.data = "mean_cl_boot",
-    fun.args = list(conf.int = 0.95),
-    geom = "ribbon",
-    alpha = 0.2,
-    linetype = 0
-  ) +
-  scale_color_bright() +
-  scale_fill_bright() +
-  facet_grid(
-    environment~interaction_multiplier,
-    axes = "all_x",
-    labeller = label_both
-  ) +
-  theme(
-    legend.position = "bottom"
-  )
-ggsave(
-  file = paste(plot_dir, "symbiont_parent_entropy_task_sets_plt.pdf", sep = "/"),
-  plot = symbiont_parent_entropy_task_sets_plt,
-  width = 15,
-  height = 15
-)
-```
-
-## Task profile matches over time
-
-### Host-symbiont pair any matches count
-
-```{r}
-host_sym_any_matches_total_plt <- time_data %>%
-  filter(update %% 500 == 0) %>%
-  ggplot(
-    aes(
-      x = update,
-      y = CurUpdate_host_sym_any_matches_total,
-      color = sym_condition,
-      fill = sym_condition
-    )
-  ) +
-  stat_summary(fun = "mean", geom = "line") +
-  stat_summary(
-    fun.data = "mean_cl_boot",
-    fun.args = list(conf.int = 0.95),
-    geom = "ribbon",
-    alpha = 0.2,
-    linetype = 0
-  ) +
-  scale_color_bright() +
-  scale_fill_bright() +
-  facet_grid(
-    environment~interaction_multiplier,
-    axes = "all_x",
-    labeller = label_both
-  ) +
-  theme(
-    legend.position = "bottom"
-  )
-ggsave(
-  file = paste(plot_dir, "host_sym_any_matches_total_plt.pdf", sep = "/"),
-  plot = host_sym_any_matches_total_plt,
-  width = 15,
-  height = 15
-)
-```
-
-### Host-symbiont pair perfect matches count
-
-Perfect match vs. any match is a little strange: two organisms that do nothing are a perfect match but don't count as 'any match'
-
-```{r}
-host_sym_perfect_matches_total_plt <- time_data %>%
-  filter(update %% 500 == 0) %>%
-  ggplot(
-    aes(
-      x = update,
-      y = CurUpdate_host_sym_perfect_matches_total,
-      color = sym_condition,
-      fill = sym_condition
-    )
-  ) +
-  stat_summary(fun = "mean", geom = "line") +
-  stat_summary(
-    fun.data = "mean_cl_boot",
-    fun.args = list(conf.int = 0.95),
-    geom = "ribbon",
-    alpha = 0.2,
-    linetype = 0
-  ) +
-  scale_color_bright() +
-  scale_fill_bright() +
-  facet_grid(
-    environment~interaction_multiplier,
-    axes = "all_x",
-    labeller = label_both
-  ) +
-  theme(
-    legend.position = "bottom"
-  )
-ggsave(
-  file = paste(plot_dir, "host_sym_perfect_matches_total_plt.pdf", sep = "/"),
-  plot = host_sym_perfect_matches_total_plt,
-  width = 15,
-  height = 15
-)
-```
-
-## Population size
-
-Average / median population size
-
-```{r}
-pop_size_summary <- time_data %>%
-  group_by(
-    SEED,
-    treatment
-  ) %>%
-  summarize(
-    host_pop_size_avg = mean(OrgCounts_host_count),
-    host_pop_size_median = median(OrgCounts_host_count),
-    host_pop_size_variance = var(OrgCounts_host_count),
-    sym_pop_size_avg = mean(OrgCounts_hosted_sym_count),
-    sym_pop_size_median = median(OrgCounts_hosted_sym_count),
-    sym_pop_size_variance = var(OrgCounts_hosted_sym_count)
-  )
-```
-
-```{r}
-host_pop_size_avg_plt <- pop_size_summary %>%
-  ggplot(
-    aes(x = treatment, fill = treatment, y = host_pop_size_avg)
-  ) +
-  geom_point(
-    mapping=aes(color = treatment),
-    position = position_jitter(width = .15),
-    size = .5,
-    alpha = 0.8
-  ) +
-  geom_boxplot(
-    width = .1,
-    outlier.shape = NA,
-    alpha = 0.5
-  ) +
-  scale_x_discrete() +
-  # facet_wrap(STRESS_FREQUENCY~stress_death_chance, labeller = label_both) +
-  theme(
-    legend.position = "none",
-    axis.text.x = element_text(
-      angle = 60,
-      hjust = 1
-    )
-  )
-ggsave(
-  file = paste(plot_dir, "host_pop_size_avg_plt.pdf", sep = "/"),
-  plot = host_pop_size_avg_plt,
-  width = 10,
-  height = 10
-)
-```
-
-```{r}
-host_pop_size_variance_plt <- pop_size_summary %>%
-  ggplot(
-    aes(x = treatment, fill = treatment, y = host_pop_size_variance)
-  ) +
-  geom_point(
-    mapping=aes(color = treatment),
-    position = position_jitter(width = .15),
-    size = .5,
-    alpha = 0.8
-  ) +
-  geom_boxplot(
-    width = .1,
-    outlier.shape = NA,
-    alpha = 0.5
-  ) +
-  scale_x_discrete() +
-  # facet_wrap(STRESS_FREQUENCY~stress_death_chance, labeller = label_both) +
-  theme(
-    legend.position = "none",
-    axis.text.x = element_text(
-      angle = 60,
-      hjust = 1
-    )
-  )
-ggsave(
-  file = paste(plot_dir, "host_pop_size_variance_plt.pdf", sep = "/"),
-  plot = host_pop_size_variance_plt,
-  width = 10,
-  height = 10
-)
-```
-
-## Generations elapsed
-
-### Hosts
-
-```{r}
-host_avg_gens_elapsed_plt <- summary_data %>%
-  ggplot(
-    aes(x = treatment, fill = treatment, y = CurUpdate_host_mean_generations)
-  ) +
-  geom_point(
-    mapping=aes(color = treatment),
-    position = position_jitter(width = .15),
-    size = .5,
-    alpha = 0.8
-  ) +
-  geom_boxplot(
-    width = .1,
-    outlier.shape = NA,
-    alpha = 0.5
-  ) +
-  scale_x_discrete() +
-  theme(
-    legend.position = "none",
-    axis.text.x = element_text(
-      angle = 60,
-      hjust = 1
-    )
-  )
-ggsave(
-  file = paste(plot_dir, "host_avg_gens_elapsed_plt.pdf", sep = "/"),
-  plot = host_avg_gens_elapsed_plt,
-  width = 10,
-  height = 10
-)
-```
-
-### Symbionts
-
-```{r}
-sym_avg_gens_elapsed_plt <- summary_data %>%
-  ggplot(
-    aes(x = treatment, fill = treatment, y = CurUpdate_sym_mean_generations)
-  ) +
-  geom_point(
-    mapping=aes(color = treatment),
-    position = position_jitter(width = .15),
-    size = .5,
-    alpha = 0.8
-  ) +
-  geom_boxplot(
-    width = .1,
-    outlier.shape = NA,
-    alpha = 0.5
-  ) +
-  scale_x_discrete() +
-  theme(
-    legend.position = "none",
-    axis.text.x = element_text(
-      angle = 60,
-      hjust = 1
-    )
-  )
-ggsave(
-  file = paste(plot_dir, "sym_avg_gens_elapsed_plt.pdf", sep = "/"),
-  plot = sym_avg_gens_elapsed_plt,
-  width = 10,
-  height = 10
 )
 ```
 
@@ -1023,4 +736,158 @@ for (trt in treatments) {
     height = 40
   )
 }
+```
+
+## Transmission
+
+### Attempts horizontal transmission
+
+```{r}
+TransmissionRates_attempts_horiztrans_plt <- time_data %>%
+  filter(update %% 500 == 0) %>%
+  ggplot(
+    aes(
+      x = update,
+      y = TransmissionRates_attempts_horiztrans,
+      color = sym_condition,
+      fill = sym_condition
+    )
+  ) +
+  stat_summary(fun = "mean", geom = "line") +
+  stat_summary(
+    fun.data = "mean_cl_boot",
+    fun.args = list(conf.int = 0.95),
+    geom = "ribbon",
+    alpha = 0.2,
+    linetype = 0
+  ) +
+  scale_color_bright() +
+  scale_fill_bright() +
+  facet_wrap(
+    ~ task_credit,
+    axes = "all_x"
+  ) +
+  theme(
+    legend.position = "bottom"
+  )
+ggsave(
+  file = paste(plot_dir, "TransmissionRates_attempts_horiztrans_plt.pdf", sep = "/"),
+  plot = TransmissionRates_attempts_horiztrans_plt,
+  width = 15,
+  height = 15
+)
+```
+
+### Successes horizontal transmission
+
+```{r}
+TransmissionRates_successes_horiztrans_plt <- time_data %>%
+  filter(update %% 500 == 0) %>%
+  ggplot(
+    aes(
+      x = update,
+      y = TransmissionRates_successes_horiztrans,
+      color = sym_condition,
+      fill = sym_condition
+    )
+  ) +
+  stat_summary(fun = "mean", geom = "line") +
+  stat_summary(
+    fun.data = "mean_cl_boot",
+    fun.args = list(conf.int = 0.95),
+    geom = "ribbon",
+    alpha = 0.2,
+    linetype = 0
+  ) +
+  scale_color_bright() +
+  scale_fill_bright() +
+  facet_wrap(
+    ~ task_credit,
+    axes = "all_x"
+  ) +
+  theme(
+    legend.position = "bottom"
+  )
+ggsave(
+  file = paste(plot_dir, "TransmissionRates_successes_horiztrans_plt.pdf", sep = "/"),
+  plot = TransmissionRates_successes_horiztrans_plt,
+  width = 15,
+  height = 15
+)
+```
+
+### Attempts vertical transmission
+
+```{r}
+TransmissionRates_attempts_verttrans_plt <- time_data %>%
+  filter(update %% 500 == 0) %>%
+  ggplot(
+    aes(
+      x = update,
+      y = TransmissionRates_attempts_verttrans,
+      color = sym_condition,
+      fill = sym_condition
+    )
+  ) +
+  stat_summary(fun = "mean", geom = "line") +
+  stat_summary(
+    fun.data = "mean_cl_boot",
+    fun.args = list(conf.int = 0.95),
+    geom = "ribbon",
+    alpha = 0.2,
+    linetype = 0
+  ) +
+  scale_color_bright() +
+  scale_fill_bright() +
+  facet_wrap(
+    ~ task_credit,
+    axes = "all_x"
+  ) +
+  theme(
+    legend.position = "bottom"
+  )
+ggsave(
+  file = paste(plot_dir, "TransmissionRates_attempts_verttrans_plt.pdf", sep = "/"),
+  plot = TransmissionRates_attempts_verttrans_plt,
+  width = 15,
+  height = 15
+)
+```
+
+### Successes vertical transmission
+
+```{r}
+TransmissionRates_successes_verttrans_plt <- time_data %>%
+  filter(update %% 500 == 0) %>%
+  ggplot(
+    aes(
+      x = update,
+      y = TransmissionRates_successes_verttrans,
+      color = sym_condition,
+      fill = sym_condition
+    )
+  ) +
+  stat_summary(fun = "mean", geom = "line") +
+  stat_summary(
+    fun.data = "mean_cl_boot",
+    fun.args = list(conf.int = 0.95),
+    geom = "ribbon",
+    alpha = 0.2,
+    linetype = 0
+  ) +
+  scale_color_bright() +
+  scale_fill_bright() +
+  facet_wrap(
+    ~ task_credit,
+    axes = "all_x"
+  ) +
+  theme(
+    legend.position = "bottom"
+  )
+ggsave(
+  file = paste(plot_dir, "TransmissionRates_successes_verttrans_plt.pdf", sep = "/"),
+  plot = TransmissionRates_successes_verttrans_plt,
+  width = 15,
+  height = 15
+)
 ```
