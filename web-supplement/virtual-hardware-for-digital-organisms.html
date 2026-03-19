@@ -4,18 +4,18 @@
 
   <meta charset="utf-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <title>Supplemental Material for Mutualism can constrain host diversity and evolution</title>
+  <title>Chapter 4 Virtual hardware for digital organisms | Supplemental Material for Mutualism can constrain host diversity and evolution</title>
   <meta name="description" content="Supplemental material" />
   <meta name="generator" content="bookdown 0.37 and GitBook 2.6.7" />
 
-  <meta property="og:title" content="Supplemental Material for Mutualism can constrain host diversity and evolution" />
+  <meta property="og:title" content="Chapter 4 Virtual hardware for digital organisms | Supplemental Material for Mutualism can constrain host diversity and evolution" />
   <meta property="og:type" content="book" />
   
   <meta property="og:description" content="Supplemental material" />
   <meta name="github-repo" content="amlalejini/2026-alife-mutualism-constrains-evolution" />
 
   <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="Supplemental Material for Mutualism can constrain host diversity and evolution" />
+  <meta name="twitter:title" content="Chapter 4 Virtual hardware for digital organisms | Supplemental Material for Mutualism can constrain host diversity and evolution" />
   
   <meta name="twitter:description" content="Supplemental material" />
   
@@ -30,8 +30,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black" />
   
   
-
-<link rel="next" href="data-availability.html"/>
+<link rel="prev" href="compilation-instructions.html"/>
+<link rel="next" href="equal-function-rewards.html"/>
 <script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.4.6/dist/fuse.min.js"></script>
 <link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
@@ -248,42 +248,135 @@ div.csl-indent {
           <div class="page-inner">
 
             <section class="normal" id="section-">
-<div id="header">
-<h1 class="title">Supplemental Material for Mutualism can constrain host diversity and evolution</h1>
-<p class="author"><em></em></p>
-<p class="date"><em>2026-03-19</em></p>
+<div id="virtual-hardware-for-digital-organisms" class="section level1 hasAnchor" number="4">
+<h1><span class="header-section-number">Chapter 4</span> Virtual hardware for digital organisms<a href="virtual-hardware-for-digital-organisms.html#virtual-hardware-for-digital-organisms" class="anchor-section" aria-label="Anchor link to header"></a></h1>
+<div id="virtual-hardware-components" class="section level2 hasAnchor" number="4.1">
+<h2><span class="header-section-number">4.1</span> Virtual hardware components<a href="virtual-hardware-for-digital-organisms.html#virtual-hardware-components" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>Each digital organism comprises a linear program (its genome) and a set of virtual hardware components for executing its genome.
+Genomes use the SignalGP-lite representation (<a href="https://github.com/mmore500/signalgp-lite" class="uri">https://github.com/mmore500/signalgp-lite</a>).</p>
+<p>In this work, the virtual hardware contains:
+- 8 registers: these are used as “working memory”, used as source operands and destination operands for instructions
+- 2 memory stacks: serve as additional memory for programs. Programs can push values from registers to a stack or pop values from a stack into a register. Each stack has a maximum size of 16 values.</p>
 </div>
-<div id="introduction" class="section level1 hasAnchor" number="1">
-<h1><span class="header-section-number">Chapter 1</span> Introduction<a href="index.html#introduction" class="anchor-section" aria-label="Anchor link to header"></a></h1>
-<p>This is the supplemental material our 2026 Artificial Life Conference submission, “Mutualism can constrain host diversity and evolution”.
-This is not intended as a stand-alone document, but as a companion to our main manuscript.</p>
-<div id="about-our-supplemental-material" class="section level2 hasAnchor" number="1.1">
-<h2><span class="header-section-number">1.1</span> About our supplemental material<a href="index.html#about-our-supplemental-material" class="anchor-section" aria-label="Anchor link to header"></a></h2>
-<p>Our supplemental material is hosted using <a href="https://pages.github.com/">GitHub pages</a>.
-We compiled our data analyses and supplemental documentation into this web-accessible book using <a href="https://bookdown.org">bookdown</a>.</p>
-<p>The source code and configuration files for this supplemental material can be found in <a href="https://github.com/amlalejini/2026-alife-mutualism-constrains-evolution">this GitHub repository</a>.</p>
-<p>Our supplemental material includes the following:</p>
+<div id="instruction-set" class="section level2 hasAnchor" number="4.2">
+<h2><span class="header-section-number">4.2</span> Instruction set<a href="virtual-hardware-for-digital-organisms.html#instruction-set" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>SignalGP instruction set used in digital organism genomes in this work.</p>
+<p>Abbreviations:</p>
 <ul>
-<li>Data availability
-(Section <a href="data-availability.html#data-availability">2</a>)</li>
-<li>Local compilation instructions
-(Section <a href="compilation-instructions.html#compilation-instructions">3</a>)</li>
-</ul>
-<p>TODO</p>
-</div>
-<div id="contributing-authors" class="section level2 hasAnchor" number="1.2">
-<h2><span class="header-section-number">1.2</span> Contributing authors<a href="index.html#contributing-authors" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<li>EOP: End of program</li>
+<li>Reg: local register
 <ul>
-<li>Delaney Kelley</li>
-<li>Owen Hillary</li>
-<li>Elias Hillman-Emelianoff</li>
-<li>Ahmad Khalili</li>
-<li>Emma Zhang</li>
-<li>Kiara M. Johnson</li>
-<li><a href="https://ecodelab.com/">Emily Dolson</a></li>
-<li><a href="https://anyaevostinar.github.io/">Anya E. Vostinar</a></li>
-<li><a href="https://lalejini.com">Alexander Lalejini</a></li>
+<li>Reg[0] indicates the value at the register specified by an instruction’s first <em>argument</em>, Reg[1] indicates the value at the register specified by an instruction’s second argument, and Reg[2] indicates the value at the register specified by the instruction’s third argument.</li>
+<li>Reg[0], Reg[1], <em>etc</em>: Register 0, Register 1, <em>etc.</em></li>
+</ul></li>
+<li>Arg: Instruction argument
+<ul>
+<li>Arg[i] indicates the i’th instruction argument (an integer encoded in the genome)</li>
+<li>E.g., Arg[0] is an instruction’s first argument</li>
+</ul></li>
 </ul>
+<p>Instructions that would produce undefined behavior (e.g., division by zero) are treated as no operations.</p>
+<table>
+<colgroup>
+<col width="30%" />
+<col width="38%" />
+<col width="30%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">Instruction</th>
+<th align="center">Arguments Used</th>
+<th align="left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left"><code>Nop</code></td>
+<td align="center">0</td>
+<td align="left">No operation</td>
+</tr>
+<tr class="even">
+<td align="left"><code>Increment</code></td>
+<td align="center">1</td>
+<td align="left">Reg[0] = Reg[0] + 1</td>
+</tr>
+<tr class="odd">
+<td align="left"><code>Decrement</code></td>
+<td align="center">1</td>
+<td align="left">Reg[0] = Reg[0] - 1</td>
+</tr>
+<tr class="even">
+<td align="left"><code>ShiftLeft</code></td>
+<td align="center">1</td>
+<td align="left">Reg[0] = Reg[0] &lt;&lt; 1</td>
+</tr>
+<tr class="odd">
+<td align="left"><code>ShiftRight</code></td>
+<td align="center">1</td>
+<td align="left">Reg[0] = Reg[0] &gt;&gt; 1</td>
+</tr>
+<tr class="even">
+<td align="left"><code>Subtract</code></td>
+<td align="center">3</td>
+<td align="left">Reg[0] = Reg[1] - Reg[2]</td>
+</tr>
+<tr class="odd">
+<td align="left"><code>Nand</code></td>
+<td align="center">3</td>
+<td align="left">Reg[0] = ~(Reg[1] &amp; Reg[2])</td>
+</tr>
+<tr class="even">
+<td align="left"><code>Push</code></td>
+<td align="center">1</td>
+<td align="left">Push Reg[0] to active memory stack</td>
+</tr>
+<tr class="odd">
+<td align="left"><code>Pop</code></td>
+<td align="center">1</td>
+<td align="left">Pop top of active memory stack. Reg[0] = popped value</td>
+</tr>
+<tr class="even">
+<td align="left"><code>SwapStack</code></td>
+<td align="center">0</td>
+<td align="left">Change active stack.</td>
+</tr>
+<tr class="odd">
+<td align="left"><code>Swap</code></td>
+<td align="center">2</td>
+<td align="left">Swap values between Reg[0] and Reg[1]</td>
+</tr>
+<tr class="even">
+<td align="left"><code>Reproduce</code></td>
+<td align="center">0</td>
+<td align="left">Triggers organism reproduction attempt if organism has sufficient resources.</td>
+</tr>
+<tr class="odd">
+<td align="left"><code>IO</code></td>
+<td align="center">1</td>
+<td align="left">Output value in Reg[0], and set Reg[0] = new input value.</td>
+</tr>
+<tr class="even">
+<td align="left"><code>JumpIfNEq</code></td>
+<td align="center">2</td>
+<td align="left">if (Reg[0] != Reg[1]) Jump to Anchor specified by instruction tag (tag matching determines target Anchor).</td>
+</tr>
+<tr class="odd">
+<td align="left"><code>JumpIfLess</code></td>
+<td align="center">2</td>
+<td align="left">if (Reg[0] &lt; Reg[1]) Jump to Anchor specified by instruction tag (tag matching determines target Anchor).</td>
+</tr>
+<tr class="even">
+<td align="left"><code>JumpIfEq</code></td>
+<td align="center">2</td>
+<td align="left">if (Reg[0] == Reg[1]) Jump to Anchor specified by instruction tag (tag matching determines target Anchor).</td>
+</tr>
+<tr class="odd">
+<td align="left"><code>Anchor</code></td>
+<td align="center">0</td>
+<td align="left">Tag-based code label that can be jumped to with a jump instruction.</td>
+</tr>
+</tbody>
+</table>
 
 </div>
 </div>
@@ -292,8 +385,8 @@ We compiled our data analyses and supplemental documentation into this web-acces
           </div>
         </div>
       </div>
-
-<a href="data-availability.html" class="navigation navigation-next navigation-unique" aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+<a href="compilation-instructions.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="equal-function-rewards.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
     </div>
   </div>
 <script src="libs/gitbook-2.6.7/js/app.min.js"></script>
@@ -324,7 +417,7 @@ gitbook.start({
 "size": 2
 },
 "edit": {
-"link": "https://github.com/amlalejini/2026-alife-mutualism-constrains-evolution/tree/main/index.Rmd",
+"link": "https://github.com/amlalejini/2026-alife-mutualism-constrains-evolution/tree/main/../docs/sgp-virtual-hardware.md",
 "text": "Edit"
 },
 "history": {
