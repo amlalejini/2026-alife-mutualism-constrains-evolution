@@ -9,9 +9,9 @@ rmd_files: ["index.Rmd",
             "../docs/sgp-virtual-hardware.md",
             "../experiments/manuscript-analyses/flat-rewards-experiment.Rmd",
             "../experiments/manuscript-analyses/diff-rewards-experiment.Rmd",
-            # experiments/2026-02-23-health-task-credit
-            # experiments/2026-02-23-health-task-rewards
-            # experiments/2026-02-24-health-donate-prop
-            # experiments/2026-02-24-health-synergy
+            "../experiments/manuscript-analyses/environment.Rmd",
+            "../experiments/manuscript-analyses/donate-prop.Rmd",
+            "../experiments/manuscript-analyses/synergy.Rmd",
+            "../experiments/manuscript-analyses/function-restrictions.Rmd",
             "tail.Rmd"
            ]
