@@ -1,0 +1,193 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{book}
+\usepackage{amsmath,amssymb}
+\usepackage{lmodern}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage{longtable,booktabs,array}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{5}
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\usepackage[]{natbib}
+\bibliographystyle{apalike}
+\nocite{*}
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same} % disable monospaced font for URLs
+\hypersetup{
+  pdftitle={Supplemental Material for Mutualism can constrain host diversity and evolution},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\title{Supplemental Material for Mutualism can constrain host diversity and evolution}
+\author{}
+\date{\vspace{-2.5em}2026-03-19}
+
+\begin{document}
+\maketitle
+
+{
+\setcounter{tocdepth}{1}
+\tableofcontents
+}
+\hypertarget{introduction}{%
+\chapter{Introduction}\label{introduction}}
+
+This is the supplemental material our 2026 Artificial Life Conference submission, ``Mutualism can constrain host diversity and evolution''.
+This is not intended as a stand-alone document, but as a companion to our main manuscript.
+
+\hypertarget{about-our-supplemental-material}{%
+\section{About our supplemental material}\label{about-our-supplemental-material}}
+
+Our supplemental material is hosted using \href{https://pages.github.com/}{GitHub pages}.
+We compiled our data analyses and supplemental documentation into this web-accessible book using \href{https://bookdown.org}{bookdown}.
+
+The source code and configuration files for this supplemental material can be found in \href{https://github.com/amlalejini/2026-alife-mutualism-constrains-evolution}{this GitHub repository}.
+
+Our supplemental material includes the following:
+
+\begin{itemize}
+\tightlist
+\item
+  Data availability
+  (Section \ref{data-availability})
+\item
+  Local compilation instructions
+  (Section \ref{compilation-instructions})
+\end{itemize}
+
+TODO
+
+\hypertarget{contributing-authors}{%
+\section{Contributing authors}\label{contributing-authors}}
+
+\begin{itemize}
+\tightlist
+\item
+  Delaney Kelley
+\item
+  Owen Hillary
+\item
+  Elias Hillman-Emelianoff
+\item
+  Ahmad Khalili
+\item
+  Emma Zhang
+\item
+  Kiara M. Johnson
+\item
+  \href{https://ecodelab.com/}{Emily Dolson}
+\item
+  \href{https://anyaevostinar.github.io/}{Anya E. Vostinar}
+\item
+  \href{https://lalejini.com}{Alexander Lalejini}
+\end{itemize}
+
+\hypertarget{data-availability}{%
+\chapter{Data availability}\label{data-availability}}
+
+\hypertarget{source-code}{%
+\section{Source code}\label{source-code}}
+
+The source code for his work is publicly accessible on GitHub: \url{https://github.com/amlalejini/}.
+This repository has also been archived on Zenodo: TODO
+
+\hypertarget{experiment-results}{%
+\section{Experiment results}\label{experiment-results}}
+
+Data generated from our experiments used in analyses are available online, archived in an OSF repository: \url{https://osf.io/j3ezd/}
+
+\hypertarget{compilation-instructions}{%
+\chapter{Compilation instructions}\label{compilation-instructions}}
+
+Instructions for compiling and running the software used in this study on your local machine.
+All experiments were run on Mac or Linux-based operating systems.
+
+You will need a C++ compiler that supports C++20.
+We used g++14 for all local compilations.
+
+You will also need Python to run graph generation and analysis.
+Python dependencies are listed in the \texttt{requirements.txt} at the root of \href{https://github.com/amlalejini/2026-alife-mutualism-constrains-evolution}{this repository}.
+
+Statistical analyses and data visualizations were conducted using R.
+
+Experiments were conducted using the Symbulation software platform.
+The specific version of Symbulation used for these experiments can be found here: \url{https://github.com/amlalejini/SymbulationEmp/tree/sgp-mode-refactor} (commit hash: \texttt{476bd8a4c0e6390942ede46ee9cd1bbe5ab8ec70}).
+This supplemental repository has the correct Symbulation version pinned as a git submodule (in \texttt{third-party/}).
+
+\hypertarget{instructions}{%
+\section{Instructions}\label{instructions}}
+
+First, clone the \texttt{2026-alife-mutualism-constrains-evolution} repository (\url{https://github.com/amlalejini/2026-alife-mutualism-constrains-evolution}) to your local machine.
+Then, initialize and update the git submodules inside the repository.
+From inside the repository, run:
+
+\begin{verbatim}
+git submodule update --init --recursive
+\end{verbatim}
+
+This will download the correct version of Symbulation along with all of its necessary dependencies.
+
+To compile Symbulation, navigate to the \texttt{third-party/SymbulationEmp} directory, and run \texttt{make\ sgp-mode}.
+The compiled executable will be placed inside the \texttt{third-party/SymbulationEmp} directory.
+
+The Symbulation configuration files used for each of experiments can be found in the \texttt{experiments/} directory (within the \texttt{hpc/config/} subdirectory for any given experiment).
+
+  \bibliography{packages.bib,supplemental.bib}
+
+\end{document}
