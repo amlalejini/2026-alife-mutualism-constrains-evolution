@@ -86,7 +86,8 @@ summary_data <- summary_data %>%
       START_MOI == "1" & HEALTH_TYPE == "mutualist" ~ "mutualist",
       .default = "unknown" # precaution against unexpected parameterizations
     ),
-    interaction_multiplier = as.factor(PARASITE_CYCLE_STEAL_MULTIPLIER)
+    interaction_multiplier = as.factor(PARASITE_CYCLE_STEAL_MULTIPLIER),
+    extinct_syms = OrgCounts_hosted_sym_count == 0
   ) %>%
   mutate(
     treatment = paste0(
@@ -97,8 +98,21 @@ summary_data <- summary_data %>%
   mutate(
     treatment = as.factor(
       treatment
+    ),
+    sym_con_extinction = as.factor(
+      paste0(sym_condition, "_extinct=", extinct_syms)
     )
   )
+```
+
+```{r}
+seeds_with_extinct_syms <- filter(
+  summary_data,
+  extinct_syms == TRUE
+)$SEED
+# Kind of gross way to "unfactor" the filtered list...
+# Probably a better way to do it!
+seeds_with_extinct_syms <- as.numeric(paste(seeds_with_extinct_syms))
 ```
 
 Load time series data.
@@ -129,12 +143,16 @@ time_data <- time_data %>%
       START_MOI == "1" & HEALTH_TYPE == "mutualist" ~ "mutualist",
       .default = "unknown" # precaution against unexpected parameterizations
     ),
-    interaction_multiplier = as.factor(PARASITE_CYCLE_STEAL_MULTIPLIER)
+    interaction_multiplier = as.factor(PARASITE_CYCLE_STEAL_MULTIPLIER),
+    extinct_syms = SEED %in% seeds_with_extinct_syms
   ) %>%
   mutate(
     treatment = paste0(
       sym_condition,
       "_IM=", interaction_multiplier
+    ),
+    sym_con_extinction = as.factor(
+      paste0(sym_condition, "_extinct=", extinct_syms)
     )
   ) %>%
   mutate(
@@ -220,6 +238,7 @@ host_over_time_parent_task_data <- time_data %>%
     SEED,
     treatment,
     sym_condition,
+    sym_con_extinction,
     interaction_multiplier,
     update,
     CurUpdate_AND_NOT_in_host_parent_org_counts,
@@ -260,6 +279,20 @@ host_over_time_parent_task_data <- time_data %>%
       levels = tasks,
       labels = tasks
     )
+  ) %>%
+  mutate(
+    task_complexity = case_when(
+      task == "NOT" ~ 1,
+      task == "NAND" ~ 1,
+      task == "OR_NOT" ~ 2,
+      task == "AND" ~ 2,
+      task == "OR" ~ 3,
+      task == "AND_NOT" ~ 3,
+      task == "NOR" ~ 4,
+      task == "XOR" ~ 4,
+      task == "EQU" ~ 5,
+      .default = -1
+    )
   )
 
 host_parent_tasks_all_time_by_task <- host_over_time_parent_task_data %>%
@@ -268,6 +301,7 @@ host_parent_tasks_all_time_by_task <- host_over_time_parent_task_data %>%
     SEED,
     treatment,
     sym_condition,
+    sym_con_extinction,
     interaction_multiplier,
     task
   ) %>%
@@ -287,6 +321,92 @@ host_parent_tasks_all_time_by_task <- host_over_time_parent_task_data %>%
     parent_tasks_completed_ever = sum(parent_task_completed_ever == TRUE)
   )
 
+```
+
+Additionally, summarize by task complexity level.
+
+TODO
+```{r}
+host_max_task_complexity_data <- host_over_time_parent_task_data %>%
+  group_by(
+    SEED,
+    treatment,
+    sym_condition,
+    sym_con_extinction,
+    interaction_multiplier,
+    task,
+    task_complexity
+  ) %>%
+  summarize(
+    n = n(),
+    parent_task_completed_ever = any(task_completed_by_parent)
+  ) %>%
+  ungroup() %>%
+  # This filter works fine because all replicates start with a task
+  filter(
+    parent_task_completed_ever
+  ) %>%
+  group_by(
+    SEED,
+    treatment,
+    sym_condition,
+    sym_con_extinction,
+    interaction_multiplier
+  ) %>%
+  summarize(
+    max_task_complexity = max(task_complexity)
+  ) %>%
+  mutate(
+    sym_condition = factor(
+      sym_condition,
+      levels = c(
+        "no-syms",
+        "parasite",
+        "mutualist"
+      )
+    )
+  )
+
+
+```
+
+Task complexity over time
+
+```{r}
+host_max_task_complexity_over_time_data <- host_over_time_parent_task_data %>%
+  # group_by(
+  #   SEED,
+  #   treatment,
+  #   sym_condition,
+  #   interaction_multiplier,
+  #   task,
+  #   task_complexity,
+  #   update
+  # ) %>%
+  # This filter works fine because all replicates start with a task
+  filter(
+    task_completed_by_parent
+  ) %>%
+  group_by(
+    SEED,
+    treatment,
+    sym_condition,
+    interaction_multiplier,
+    update
+  ) %>%
+  summarize(
+    max_task_complexity = max(task_complexity)
+  ) %>%
+  mutate(
+    sym_condition = factor(
+      sym_condition,
+      levels = c(
+        "no-syms",
+        "parasite",
+        "mutualist"
+      )
+    )
+  )
 ```
 
 ```{r}
@@ -392,6 +512,143 @@ save_kable(
     "host_avg_diff_num_host_parent_tasks.pdf",
     sep = "/"
   )
+)
+```
+
+Maximum task complexity evolved
+
+```{r}
+host_max_task_complexity_plt <- host_max_task_complexity_data %>%
+  ggplot(
+    aes(x = sym_condition, fill = sym_condition, y = max_task_complexity)
+  ) +
+  geom_point(
+    mapping=aes(color = sym_condition),
+    position = position_jitter(width = .15),
+    size = .5,
+    alpha = 0.8
+  ) +
+  geom_boxplot(
+    width = .1,
+    outlier.shape = NA,
+    alpha = 0.5
+  ) +
+  scale_x_discrete() +
+  facet_wrap(~interaction_multiplier) +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_text(
+      angle = 60,
+      hjust = 1
+    )
+  )
+ggsave(
+  file = paste(plot_dir, "host_max_task_complexity_plt.pdf", sep = "/"),
+  plot = host_max_task_complexity_plt,
+  width = 10,
+  height = 10
+)
+```
+
+```{r}
+host_max_task_complexity_sep_extinctions_plt <- host_max_task_complexity_data %>%
+  ggplot(
+    aes(x = sym_con_extinction, fill = sym_con_extinction, y = max_task_complexity)
+  ) +
+  geom_point(
+    mapping=aes(color = sym_con_extinction),
+    position = position_jitter(width = .15),
+    size = .5,
+    alpha = 0.8
+  ) +
+  geom_boxplot(
+    width = .1,
+    outlier.shape = NA,
+    alpha = 0.5
+  ) +
+  scale_x_discrete() +
+  facet_wrap(~interaction_multiplier) +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_text(
+      angle = 60,
+      hjust = 1
+    )
+  )
+ggsave(
+  file = paste(plot_dir, "host_max_task_complexity_sep_extinctions_plt.pdf", sep = "/"),
+  plot = host_max_task_complexity_sep_extinctions_plt,
+  width = 10,
+  height = 10
+)
+```
+
+Task complexity over time
+
+```{r}
+host_max_task_complexity_over_time_plt <- host_max_task_complexity_over_time_data %>%
+  filter(update %% 500 == 0) %>%
+  ggplot(
+    aes(
+      x = update,
+      y = max_task_complexity,
+      color = sym_condition,
+      fill = sym_condition
+    )
+  ) +
+  stat_summary(fun = "mean", geom = "line") +
+  stat_summary(
+    fun.data = "mean_cl_boot",
+    fun.args = list(conf.int = 0.95),
+    geom = "ribbon",
+    alpha = 0.2,
+    linetype = 0
+  ) +
+  scale_color_bright() +
+  scale_fill_bright() +
+  facet_wrap(
+    ~interaction_multiplier,
+    axes = "all_x",
+    labeller = label_both
+  ) +
+  theme(
+    legend.position = "bottom"
+  )
+
+ggsave(
+  file = paste(
+    plot_dir,
+    "host_max_task_complexity_over_time_plt.pdf",
+    sep = "/"
+  ),
+  plot = host_max_task_complexity_over_time_plt,
+  width = 15,
+  height = 15
+)
+```
+
+Statistical tests
+
+```{r}
+kw_test <- host_max_task_complexity_data %>%
+  group_by(interaction_multiplier) %>%
+  rstatix::kruskal_test(max_task_complexity ~ sym_condition)
+kw_test
+```
+
+```{r}
+# Grab group names of significant comparisons
+# sig_kw_groups <- filter(kw_test, p < 0.05)$interaction_multiplier
+
+stats_data <- filter(
+  host_max_task_complexity_data,
+  interaction_multiplier == "4"
+)
+pairwise.wilcox.test(
+  x = stats_data$max_task_complexity,
+  g = stats_data$sym_condition,
+  p.adjust.method = "bonferroni",
+  exact = FALSE
 )
 ```
 
@@ -819,6 +1076,45 @@ ggsave(
 )
 ```
 
+```{r}
+TransmissionRates_attempts_horiztrans_zoomed_plt <- time_data %>%
+  filter(
+    update %% 500 == 0 & interaction_multiplier == "4" & sym_condition != "parasite"
+  ) %>%
+  ggplot(
+    aes(
+      x = update,
+      y = TransmissionRates_attempts_horiztrans,
+      color = sym_condition,
+      fill = sym_condition
+    )
+  ) +
+  stat_summary(fun = "mean", geom = "line") +
+  stat_summary(
+    fun.data = "mean_cl_boot",
+    fun.args = list(conf.int = 0.95),
+    geom = "ribbon",
+    alpha = 0.2,
+    linetype = 0
+  ) +
+  scale_color_bright() +
+  scale_fill_bright() +
+  facet_wrap(
+    ~interaction_multiplier,
+    axes = "all_x",
+    labeller = label_both
+  ) +
+  theme(
+    legend.position = "bottom"
+  )
+ggsave(
+  file = paste(plot_dir, "TransmissionRates_attempts_horiztrans_zoomed_plt.pdf", sep = "/"),
+  plot = TransmissionRates_attempts_horiztrans_zoomed_plt,
+  width = 15,
+  height = 15
+)
+```
+
 ### Successes horizontal transmission
 
 ```{r}
@@ -1022,6 +1318,39 @@ ggsave(
 )
 ```
 
+```{r}
+sym_pop_size_avg_plt <- pop_size_summary %>%
+  ggplot(
+    aes(x = treatment, fill = treatment, y = sym_pop_size_avg)
+  ) +
+  geom_point(
+    mapping = aes(color = treatment),
+    position = position_jitter(width = .15),
+    size = .5,
+    alpha = 0.8
+  ) +
+  geom_boxplot(
+    width = .1,
+    outlier.shape = NA,
+    alpha = 0.5
+  ) +
+  scale_x_discrete() +
+  # facet_wrap(STRESS_FREQUENCY~stress_death_chance, labeller = label_both) +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_text(
+      angle = 60,
+      hjust = 1
+    )
+  )
+ggsave(
+  file = paste(plot_dir, "sym_pop_size_avg_plt.pdf", sep = "/"),
+  plot = sym_pop_size_avg_plt,
+  width = 10,
+  height = 10
+)
+```
+
 ## Generations elapsed
 
 ### Hosts
@@ -1056,6 +1385,22 @@ ggsave(
   width = 10,
   height = 10
 )
+```
+
+```{r}
+summary_data %>%
+  # filter(interaction_multiplier == "4") %>%
+  group_by(
+    sym_condition,
+    interaction_multiplier
+  ) %>%
+  summarise(
+    mean_gens = mean(CurUpdate_host_mean_generations),
+    median_gens = median(CurUpdate_host_mean_generations),
+    var_gens = var(CurUpdate_host_mean_generations),
+    sdev_gens = sd(CurUpdate_host_mean_generations)
+  ) %>%
+  filter(interaction_multiplier == "4")
 ```
 
 ### Symbionts
@@ -1149,4 +1494,401 @@ for (trt in treatments) {
     height = 40
   )
 }
+```
+
+## Manuscript figures
+
+Read cure data in for combined manuscript figure.
+
+```{r}
+cure_max_task_complexity_data <- read_csv(
+  file = paste(
+    working_directory,
+    "data",
+    "cure_host_max_task_complexity_over_time.csv",
+    sep = "/"
+  )
+)
+cure_max_task_complexity_data <- cure_max_task_complexity_data %>%
+  mutate(
+    cure_condition = factor(
+      cure_condition,
+      levels = c("No symbionts", "25%", "50%", "75%", "Not cured"),
+      labels = c("No sym.", "25%", "50%", "75%", "Never")
+    )
+  )
+```
+
+```{r}
+v <- color("vibrant")(7)
+color_pal <- c(v[["blue"]], v[["orange"]], v[["magenta"]])
+```
+
+```{r}
+host_max_task_complexity_data_ci <- host_max_task_complexity_data %>%
+  group_by(
+    treatment,
+    sym_condition,
+    interaction_multiplier
+  ) %>%
+  summarize(
+    mean_max_task_complexity = mean(max_task_complexity),
+    min_max_task_complexity = min(max_task_complexity),
+    max_max_task_complexity = max(max_task_complexity),
+    ci = list(
+      mean_cl_boot(
+        max_task_complexity,
+        conf.int = 0.99,
+        B = 10000,
+      ) %>% rename(mean=y, lwr=ymin, upr=ymax)
+    )
+  ) %>%
+  unnest(cols = c(ci)) %>%
+  filter(
+    interaction_multiplier == "4"
+  ) %>%
+  mutate(
+    sym_condition = factor(
+      sym_condition,
+      levels = c("no-syms", "parasite", "mutualist"),
+      labels = c("No symbionts", "Parasites", "Mutualists")
+    )
+  )
+
+dist_data <- host_max_task_complexity_data %>%
+  filter(interaction_multiplier == "4") %>%
+  mutate(
+    sym_condition = factor(
+      sym_condition,
+      levels = c("no-syms", "parasite", "mutualist"),
+      labels = c("No symbionts", "Parasites", "Mutualists")
+    )
+  )
+
+manuscript_host_task_complexity_plt <- host_max_task_complexity_data_ci %>%
+  ggplot(
+    aes(
+      x = sym_condition,
+      fill = sym_condition,
+      y = mean
+    )
+  ) +
+  geom_bar(stat = "identity") +
+  geom_point(
+    data = dist_data,
+    mapping = aes(x = sym_condition, y = max_task_complexity),
+    position = position_jitter(width = .4, height = 0.05),
+    size = .7,
+    alpha = 0.9,
+    color = "darkgray",
+    fill = "darkgray"
+  ) +
+  geom_linerange(
+    aes(
+      ymin = lwr,
+      ymax = upr
+    ),
+    alpha = 0.9,
+    linewidth = 0.7,
+    color = "black"
+  ) +
+  scale_x_discrete() +
+  scale_fill_manual(values=color_pal) +
+  scale_y_continuous(
+    limits = c(0, 5.1)
+  ) +
+  labs(
+    x = "Symbiont type",
+    y = "Mean function complexity"
+  ) +
+  theme(
+    legend.position = "none"
+  )
+# ggsave(
+#   file = paste(plot_dir, "manuscript_host_task_complexity_plt.pdf", sep = "/"),
+#   plot = manuscript_host_task_complexity_plt,
+#   width = 4,
+#   height = 4
+# )
+```
+
+```{r}
+manuscript_host_parent_entropy_task_sets_plt <- time_data %>%
+  filter(
+    # update %% 10000 == 0 &
+    interaction_multiplier == "4"
+  ) %>%
+  mutate(
+    sym_condition = factor(
+      sym_condition,
+      levels = c("no-syms", "parasite", "mutualist"),
+      labels = c("No symbionts", "Parasites", "Mutualists")
+    )
+  ) %>%
+  ggplot(
+    aes(
+      x = update,
+      y = CurUpdate_host_parent_entropy_task_sets,
+      color = sym_condition,
+      fill = sym_condition
+    )
+  ) +
+  stat_summary(fun = "mean", geom = "line") +
+  stat_summary(
+    fun.data = "mean_cl_boot",
+    fun.args = list(conf.int = 0.99),
+    geom = "ribbon",
+    alpha = 0.2,
+    linetype = 0
+  ) +
+  scale_fill_manual(
+    values = color_pal,
+    limits = c("No symbionts", "Parasites", "Mutualists"),
+    labels = c("None", "Par.", "Mut.")
+  ) +
+  scale_color_manual(
+    values = color_pal,
+    limits = c("No symbionts", "Parasites", "Mutualists"),
+    labels = c("None", "Par.", "Mut.")
+  ) +
+  labs(
+    x = "Updates",
+    y = "Shannon diversity",
+    color = "Symbiont type",
+    fill = "Symbiont type"
+  ) +
+  theme(
+    legend.position = "bottom"
+  )
+
+# ggsave(
+#   file = paste(
+#     plot_dir,
+#     "manuscript_host_parent_entropy_task_sets_plt.pdf",
+#     sep = "/"
+#   ),
+#   plot = manuscript_host_parent_entropy_task_sets_plt,
+#   width = 6,
+#   height = 4
+# )
+```
+
+```{r}
+# Define cure color palette
+# - no-syms -> blue
+# - magenta -> mutualist no cure
+# - 25% -> red
+# - 50% -> teal
+# - 75% -> grey
+cure_color_pal <- c(
+  v[["blue"]],
+  v[["red"]],
+  v[["teal"]],
+  v[["grey"]],
+  v[["magenta"]]
+)
+cure_host_max_task_complexity_over_time_plt <- cure_max_task_complexity_data %>%
+  # filter(
+  #   update %% 10000 == 0
+  # ) %>%
+  ggplot(
+    aes(
+      x = update,
+      y = max_task_complexity,
+      color = cure_condition,
+      fill = cure_condition
+    )
+  ) +
+  stat_summary(fun = "mean", geom = "line") +
+  stat_summary(
+    fun.data = "mean_cl_boot",
+    fun.args = list(conf.int = 0.99),
+    geom = "ribbon",
+    alpha = 0.2,
+    linetype = 0
+  ) +
+  scale_fill_manual(
+    values = cure_color_pal
+  ) +
+  scale_color_manual(values = cure_color_pal) +
+  scale_y_continuous(
+    limits = c(0.9, 5.1)
+  ) +
+  labs(
+    x = "Updates",
+    y = "Host function complexity",
+    color = "Cure time",
+    fill = "Cure time"
+  ) +
+  theme(
+    legend.position = "bottom"
+  )
+
+ggsave(
+  file = paste(
+    plot_dir,
+    "cure_host_max_task_complexity_over_time_plt.pdf",
+    sep = "/"
+  ),
+  plot = cure_host_max_task_complexity_over_time_plt,
+  width = 6,
+  height = 4
+)
+```
+
+
+### Smaller version
+
+```{r}
+plt_grid_smaller <- plot_grid(
+  manuscript_host_parent_entropy_task_sets_plt +
+    labs(
+      x = "Update",
+      y = "Shannon diversity",
+      color = "Sym. type",
+      fill = "Sym. type"
+    ) +
+    theme(
+      legend.position = "bottom",
+      legend.title = element_text(size = 10),
+      legend.text = element_text(size = 8),
+      axis.title.y = element_text(size = 10),
+      axis.text.y = element_text(size = 8),
+      axis.title.x = element_text(size = 10),
+      axis.text.x = element_text(size = 8)
+    ),
+  manuscript_host_task_complexity_plt +
+    labs(
+      x = "Sym. type",
+      y = "Function complexity",
+      color = "Sym. type",
+      fill = "Sym. type"
+    ) +
+    scale_x_discrete(
+      limits = c("No symbionts", "Parasites", "Mutualists"),
+      labels = c("None", "Par.", "Mut.")
+    ) +
+    theme(
+      legend.position = "none",
+      axis.title.y = element_text(size = 10),
+      axis.text.y = element_text(size = 8),
+      axis.title.x = element_text(size = 10),
+      axis.text.x = element_text(size = 8)
+    ),
+  nrow = 1,
+  ncol = 2,
+  align = "h",
+  labels = c("A)", "B)"),
+  rel_widths = c(0.65, 0.35)
+)
+plt_grid_smaller
+# plt_grid
+save_plot(
+  filename = paste(
+    plot_dir,
+    "fig-diff-rewards-host-complexity-smaller.pdf",
+    sep = "/"
+  ),
+  plot = plt_grid_smaller,
+  base_width = 4,
+  base_height = 4,
+  dpi = 600
+)
+
+
+  # manuscript_host_max_task_complexity_over_time_plt +
+  #   labs(
+  #     x = "Update",
+  #     y = "Function complexity",
+  #     color = "Sym. type",
+  #     fill = "Sym. type"
+  #   ) +
+  #   theme(
+  #     legend.position = "bottom",
+  #     legend.title = element_text(size = 10),
+  #     legend.text = element_text(size = 8),
+  #     axis.title.y = element_text(size = 10),
+  #     axis.text.y = element_text(size = 8),
+  #     axis.title.x = element_text(size = 10),
+  #     axis.text.x = element_text(size = 8)
+  #     # plot.margin = margin(t = 1, unit = "cm")
+  #   ),
+```
+
+## With cure plot
+
+
+```{r}
+
+# get_legend()
+
+plt_grid_with_cure <- plot_grid(
+    manuscript_host_task_complexity_plt +
+      labs(
+        x = "Sym. type",
+        y = "Host function complexity",
+        color = "Sym. type",
+        fill = "Sym. type"
+      ) +
+      scale_x_discrete(
+        limits = c("No symbionts", "Parasites", "Mutualists"),
+        labels = c("None", "Par.", "Mut.")
+      ) +
+      theme(
+        legend.position = "none",
+        axis.title.y = element_text(size = 10),
+        axis.text.y = element_text(size = 8),
+        axis.title.x = element_text(size = 10),
+        axis.text.x = element_text(size = 8)
+      ),
+  manuscript_host_parent_entropy_task_sets_plt +
+    labs(
+      x = "Update",
+      y = "Shannon diversity",
+      color = "Sym. type",
+      fill = "Sym. type"
+    ) +
+    theme(
+      legend.position = "bottom",
+      legend.title = element_text(size = 10),
+      legend.text = element_text(size = 8),
+      axis.title.y = element_text(size = 10),
+      axis.text.y = element_text(size = 8),
+      axis.title.x = element_text(size = 10),
+      axis.text.x = element_text(size = 8)
+    ),
+  cure_host_max_task_complexity_over_time_plt +
+    # guides(
+    #   fill=guide_legend(nrow=2,byrow=TRUE),
+    #   color=guide_legend(nrow=2,byrow=TRUE)
+    # ) +
+    theme(
+      legend.position = "right",
+      legend.title = element_text(size = 10),
+      legend.text = element_text(size = 8),
+      axis.title.y = element_text(size = 10),
+      axis.text.y = element_text(size = 8),
+      axis.title.x = element_text(size = 10),
+      axis.text.x = element_text(size = 8)
+    ),
+  nrow = 1,
+  ncol = 3,
+  align = "h",
+  labels = c("A)", "B)", "C)"),
+  label_size = 10,
+  rel_widths = c(0.2, 0.38, 0.42)
+)
+plt_grid_with_cure
+
+save_plot(
+  filename = paste(
+    plot_dir,
+    "fig-diff-rewards-panel-with-cure.pdf",
+    sep = "/"
+  ),
+  plot = plt_grid_with_cure,
+  base_width = 8,
+  base_height = 3.5,
+  dpi = 600
+)
 ```

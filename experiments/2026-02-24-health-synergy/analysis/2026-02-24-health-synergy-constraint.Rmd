@@ -1,0 +1,549 @@
+# 2026-02-24 - Health mode synergy
+
+## Dependencies and setup
+
+```{r}
+library(tidyverse)
+library(cowplot)
+library(RColorBrewer)
+library(khroma)
+library(rstatix)
+library(knitr)
+library(kableExtra)
+library(viridis)
+# library(webshot2)
+```
+
+```{r}
+# Build relative path from R's working directory to what is actually the working
+# directory for this experiment.
+experiment_slug <- "2026-02-24-health-synergy"
+working_directory <- paste(
+  "experiments",
+  experiment_slug,
+  "analysis",
+  sep = "/"
+)
+```
+
+```{r}
+# Use the cowplot theme as our default for ggplots
+theme_set(theme_cowplot())
+# Create directory to save plots
+plot_dir <- paste(
+  working_directory,
+  "plots",
+  sep = "/"
+)
+dir.create(
+  plot_dir,
+  showWarnings = FALSE
+)
+```
+
+### Load and preprocess data
+
+```{r}
+tasks <- c("NOT", "NAND", "OR_NOT", "AND", "OR", "AND_NOT", "NOR", "XOR", "EQU")
+max_pop_size <- 100 * 100
+threshold <- 0.025 * max_pop_size
+num_replicates <- 50
+```
+
+Load summary data.
+
+```{r}
+summary_data_path <- paste(
+  working_directory,
+  "data",
+  "summary.csv",
+  sep = "/"
+)
+summary_data <- read_csv(summary_data_path)
+# Do any universal preprocessing
+summary_data <- summary_data %>%
+  mutate(
+    SEED = as.factor(SEED),
+    START_MOI = as.factor(START_MOI),
+    VERTICAL_TRANSMISSION = as.factor(VERTICAL_TRANSMISSION),
+    HEALTH_TYPE = as.factor(HEALTH_TYPE),
+    HEALTH_INTERACTION_CHANCE = as.factor(HEALTH_INTERACTION_CHANCE),
+    MUTUALIST_CYCLE_GAIN_PROP = as.factor(MUTUALIST_CYCLE_GAIN_PROP),
+    PARASITE_CYCLE_LOSS_PROP = as.factor(PARASITE_CYCLE_LOSS_PROP),
+    PARASITE_BASE_CYCLE_PROP = as.factor(PARASITE_BASE_CYCLE_PROP),
+    MUTUALIST_CYCLE_DONATE_MULTIPLIER = as.factor(MUTUALIST_CYCLE_DONATE_MULTIPLIER), # nolint: line_length_linter.
+    PARASITE_CYCLE_STEAL_MULTIPLIER = as.factor(PARASITE_CYCLE_STEAL_MULTIPLIER), # nolint: line_length_linter.
+    HOST_ONLY_FIRST_TASK_CREDIT = as.factor(HOST_ONLY_FIRST_TASK_CREDIT),
+    SYM_ONLY_FIRST_TASK_CREDIT = as.factor(SYM_ONLY_FIRST_TASK_CREDIT)
+  ) %>%
+  mutate(
+    task_credit = paste0(
+      "H", HOST_ONLY_FIRST_TASK_CREDIT,
+      "S", SYM_ONLY_FIRST_TASK_CREDIT
+    ),
+    sym_condition = case_when(
+      START_MOI == "0" ~ "no-syms",
+      START_MOI == "1" & HEALTH_TYPE == "parasite" ~ "parasite",
+      START_MOI == "1" & HEALTH_TYPE == "mutualist" ~ "mutualist",
+      .default = "unknown" # precaution against unexpected parameterizations
+    ),
+    interaction_multiplier = as.factor(MUTUALIST_CYCLE_DONATE_MULTIPLIER),
+    extinct_syms = OrgCounts_hosted_sym_count == 0
+  ) %>%
+  mutate(
+    treatment = paste0(
+      sym_condition,
+      "_IM=", interaction_multiplier
+    )
+  ) %>%
+  mutate(
+    treatment = as.factor(
+      treatment
+    ),
+    sym_con_extinction = as.factor(
+      paste0(sym_condition, "_extinct=", extinct_syms)
+    )
+  )
+```
+
+```{r}
+seeds_with_extinct_syms <- filter(
+  summary_data,
+  extinct_syms == TRUE
+)$SEED
+# Kind of gross way to "unfactor" the filtered list...
+# Probably a better way to do it!
+seeds_with_extinct_syms <- as.numeric(paste(seeds_with_extinct_syms))
+```
+
+Load time series data.
+
+```{r}
+time_data_path <- paste(
+  working_directory,
+  "data",
+  "time_series.csv",
+  sep = "/"
+)
+time_data <- read_csv(time_data_path)
+
+# Do any universal preprocessing
+time_data <- time_data %>%
+  mutate(
+    SEED = as.factor(SEED),
+    START_MOI = as.factor(START_MOI),
+    VERTICAL_TRANSMISSION = as.factor(VERTICAL_TRANSMISSION),
+    HEALTH_TYPE = as.factor(HEALTH_TYPE),
+    MUTUALIST_CYCLE_DONATE_MULTIPLIER = as.factor(MUTUALIST_CYCLE_DONATE_MULTIPLIER) # nolint
+  ) %>%
+  mutate(
+    sym_condition = case_when(
+      START_MOI == "0" ~ "no-syms",
+      START_MOI == "1" & HEALTH_TYPE == "parasite" ~ "parasite",
+      START_MOI == "1" & HEALTH_TYPE == "mutualist" ~ "mutualist",
+      .default = "unknown" # precaution against unexpected parameterizations
+    ),
+    interaction_multiplier = as.factor(MUTUALIST_CYCLE_DONATE_MULTIPLIER),
+    extinct_syms = SEED %in% seeds_with_extinct_syms
+  ) %>%
+  mutate(
+    treatment = paste0(
+      sym_condition,
+      "_IM=", interaction_multiplier
+    ),
+    sym_con_extinction = as.factor(
+      paste0(sym_condition, "_extinct=", extinct_syms)
+    )
+  ) %>%
+  mutate(
+    treatment = as.factor(
+      treatment
+    )
+  )
+```
+
+```{r}
+# Pivot task data long:
+# 1) Select only relevant columns
+host_over_time_parent_task_data <- time_data %>%
+  select(
+    SEED,
+    treatment,
+    sym_condition,
+    interaction_multiplier,
+    update,
+    CurUpdate_AND_NOT_in_host_parent_org_counts,
+    CurUpdate_AND_in_host_parent_org_counts,
+    CurUpdate_EQU_in_host_parent_org_counts,
+    CurUpdate_NAND_in_host_parent_org_counts,
+    CurUpdate_NOR_in_host_parent_org_counts,
+    CurUpdate_NOT_in_host_parent_org_counts,
+    CurUpdate_OR_NOT_in_host_parent_org_counts,
+    CurUpdate_OR_in_host_parent_org_counts,
+    CurUpdate_XOR_in_host_parent_org_counts
+  ) %>%
+  pivot_longer(
+    c(
+      CurUpdate_AND_NOT_in_host_parent_org_counts,
+      CurUpdate_AND_in_host_parent_org_counts,
+      CurUpdate_EQU_in_host_parent_org_counts,
+      CurUpdate_NAND_in_host_parent_org_counts,
+      CurUpdate_NOR_in_host_parent_org_counts,
+      CurUpdate_NOT_in_host_parent_org_counts,
+      CurUpdate_OR_NOT_in_host_parent_org_counts,
+      CurUpdate_OR_in_host_parent_org_counts,
+      CurUpdate_XOR_in_host_parent_org_counts
+    ),
+    names_to = "task",
+    values_to = "task_in_parent_count"
+  ) %>%
+  mutate(
+    task = str_replace(task, "CurUpdate_", "")
+  ) %>%
+  mutate(
+    task = str_replace(task, "_in_host_parent_org_counts", "")
+  ) %>%
+  mutate(
+    task_completed_by_parent = task_in_parent_count >= threshold,
+    task = factor(
+      task,
+      levels = tasks,
+      labels = tasks
+    )
+  ) %>%
+  mutate(
+    task_complexity = case_when(
+      task == "NOT" ~ 1,
+      task == "NAND" ~ 1,
+      task == "OR_NOT" ~ 2,
+      task == "AND" ~ 2,
+      task == "OR" ~ 3,
+      task == "AND_NOT" ~ 3,
+      task == "NOR" ~ 4,
+      task == "XOR" ~ 4,
+      task == "EQU" ~ 5,
+      .default = -1
+    )
+  )
+
+host_parent_tasks_all_time_by_task <- host_over_time_parent_task_data %>%
+  group_by(
+    SEED,
+    treatment,
+    sym_condition,
+    interaction_multiplier,
+    task
+  ) %>%
+  dplyr::summarize(
+    n = n(),
+    parent_task_completed_ever = any(task_completed_by_parent)
+  ) %>%
+  ungroup() %>%
+  group_by(
+    treatment,
+    sym_condition,
+    interaction_multiplier,
+    task
+  ) %>%
+  dplyr::summarize(
+    n = n(),
+    parent_tasks_completed_ever = sum(parent_task_completed_ever == TRUE)
+  )
+```
+
+Additionally, summarize by task complexity level.
+
+```{r}
+host_max_task_complexity_data <- host_over_time_parent_task_data %>%
+  group_by(
+    SEED,
+    treatment,
+    sym_condition,
+    interaction_multiplier,
+    task,
+    task_complexity
+  ) %>%
+  summarise(
+    n = n(),
+    parent_task_completed_ever = any(task_completed_by_parent)
+  ) %>%
+  ungroup() %>%
+  # This filter works fine because all replicates start with a task
+  filter(
+    parent_task_completed_ever
+  ) %>%
+  group_by(
+    SEED,
+    treatment,
+    sym_condition,
+    interaction_multiplier
+  ) %>%
+  summarise(
+    max_task_complexity = max(task_complexity)
+  ) %>%
+  mutate(
+    sym_condition = factor(
+      sym_condition,
+      levels = c(
+        "no-syms",
+        "parasite",
+        "mutualist"
+      )
+    )
+  ) %>%
+  mutate(
+    experiment = "2026-02-24-health-synergy"
+  )
+```
+
+```{r}
+write_csv(
+  host_max_task_complexity_data,
+  paste(
+    working_directory,
+    "data",
+    "host_max_task_complexity.csv",
+    sep = "/"
+  )
+)
+```
+
+## Calculate baseline for constraint
+
+```{r}
+# What is the 95% cutoff for number of replicates?
+cut_off_95 <- ceiling(num_replicates * 0.95)
+no_sym_max_task_complexity_thresholds <- host_max_task_complexity_data %>%
+  ungroup() %>%
+  filter(sym_condition == "no-syms") %>%
+  group_by(
+    interaction_multiplier
+  ) %>%
+  arrange(
+    desc(max_task_complexity)
+  ) %>%
+  summarise(
+    complexity_threshold = nth(max_task_complexity, n = cut_off_95),
+    median_complexity = median(max_task_complexity),
+    min_complexity = min(max_task_complexity),
+    max_complexity = max(max_task_complexity)
+  )
+
+# t <- host_max_task_complexity_data %>%
+#   ungroup() %>%
+#   filter(sym_condition == "no-syms" & interaction_multiplier == "x0.5") %>%
+#   group_by(
+#     interaction_multiplier
+#   ) %>%
+#   arrange(
+#     desc(max_task_complexity)
+#   )
+```
+
+Next, categorize each replicate of the mutualism condition (across synergy levels) as constraining, promoting, or neither.
+
+```{r}
+mutualism_effect_on_hosts <- host_max_task_complexity_data %>%
+  ungroup() %>%
+  filter(sym_condition == "mutualist") %>%
+  left_join(no_sym_max_task_complexity_thresholds, by = c("interaction_multiplier")) %>%
+  mutate(
+    constrains = max_task_complexity < complexity_threshold
+  ) %>%
+  mutate(
+    mutualist_effect = case_when(
+      constrains ~ "constraint",
+      .default = "unconstrained"
+    )
+  ) %>%
+  group_by(
+    interaction_multiplier,
+    sym_condition
+  ) %>%
+  summarise(
+    n = n(),
+    constrains_count = sum(constrains),
+    no_constraint_count = sum(!constrains)
+  )
+```
+
+## Plot effects across synergy levels
+
+```{r}
+constraint_plt <- mutualism_effect_on_hosts %>%
+  ggplot(
+    aes(
+      x = interaction_multiplier,
+      color = interaction_multiplier,
+      fill = interaction_multiplier,
+      y = constrains_count
+    )
+  ) +
+  geom_col(
+    position = "dodge",
+    alpha = 0.5
+  ) +
+  geom_text(
+    aes(label = constrains_count),
+    position = position_dodge(width = 1),
+    vjust = -0.5,
+    size = 2
+  ) +
+  scale_color_dark() +
+  scale_fill_dark() +
+  scale_x_discrete() +
+  scale_y_continuous(
+    limits = c(0, 51)
+  ) +
+  theme(
+    legend.position = "none"
+  )
+
+ggsave(
+  file = paste(plot_dir, "synergy_constraint_plt.pdf", sep = "/"),
+  plot = constraint_plt,
+  width = 4,
+  height = 4
+)
+```
+
+## Max task complexity
+
+```{r}
+host_max_task_complexity_data_ci <- host_max_task_complexity_data %>%
+  group_by(
+    treatment,
+    sym_condition,
+    interaction_multiplier
+  ) %>%
+  summarise(
+    mean_max_task_complexity = mean(max_task_complexity),
+    min_max_task_complexity = min(max_task_complexity),
+    max_max_task_complexity = max(max_task_complexity),
+    ci = list(
+      mean_cl_boot(
+        max_task_complexity,
+        conf.int = 0.99,
+        B = 10000,
+      ) %>% rename(mean = y, lwr = ymin, upr = ymax)
+    )
+  ) %>%
+  unnest(cols = c(ci))
+  # %>%
+  # mutate(
+  #   sym_condition = factor(
+  #     sym_condition,
+  #     levels = c("no-syms", "parasite", "mutualist"),
+  #     labels = c("No sym.", "Par.", "Mut.")
+  #   )
+  # )
+
+host_max_complexity_bar_plt <- host_max_task_complexity_data_ci %>%
+  ggplot(
+    aes(
+      x = sym_condition,
+      fill = sym_condition,
+      y = mean
+    )
+  ) +
+  geom_bar(stat = "identity") +
+  geom_point(
+    data = host_max_task_complexity_data,
+    aes(x = sym_condition, y = max_task_complexity),
+    position = position_jitter(width = .3, height = 0.1),
+    size = .7,
+    alpha = 0.6,
+    color = "darkgray",
+    fill = "darkgray"
+  ) +
+  geom_linerange(
+    aes(
+      ymin = lwr,
+      ymax = upr
+    ),
+    alpha = 0.9,
+    linewidth = 0.5
+  ) +
+  scale_x_discrete(
+    labels = c("N", "M")
+  ) +
+  scale_fill_bright() +
+  scale_y_continuous(
+    limits = c(0, 5.1)
+  ) +
+  labs(
+    x = "Symbiont type",
+    y = "Mean function complexity"
+  ) +
+  facet_wrap(~interaction_multiplier, nrow = 1) +
+  theme(
+    legend.position = "none"
+    # axis.text.x = element_text(
+    #   angle = 45,
+    #   hjust = 1
+    # )
+  )
+ggsave(
+  file = paste(plot_dir, "host_max_complexity_bar_plt.pdf", sep = "/"),
+  plot = host_max_complexity_bar_plt,
+  width = 4,
+  height = 3
+)
+```
+
+## Engagement
+
+```{r}
+engagement <- summary_data %>%
+  mutate(
+    host_sym_engagement = CurUpdate_host_sym_any_matches_total > threshold,
+  ) %>%
+  group_by(
+    interaction_multiplier,
+    sym_condition
+  ) %>%
+  summarise(
+    host_sym_engagement_count = sum(host_sym_engagement)
+  )
+
+
+```
+
+```{r}
+host_sym_engagement_count_plt <- engagement %>%
+  filter(sym_condition == "mutualist") %>%
+  ggplot(
+    aes(
+      x = interaction_multiplier,
+      color = interaction_multiplier,
+      fill = interaction_multiplier,
+      y = host_sym_engagement_count
+    )
+  ) +
+  geom_col(
+    position = "dodge",
+    alpha = 0.5
+  ) +
+  geom_text(
+    aes(label = host_sym_engagement_count),
+    position = position_dodge(width = 1),
+    vjust = -0.5,
+    size = 2
+  ) +
+  scale_color_dark() +
+  scale_fill_dark() +
+  scale_x_discrete() +
+  scale_y_continuous(
+    limits = c(0, 51)
+  ) +
+  theme(
+    legend.position = "none"
+  )
+
+ggsave(
+  file = paste(plot_dir, "host_sym_engagement_count_plt.pdf", sep = "/"),
+  plot = host_sym_engagement_count_plt,
+  width = 4,
+  height = 4
+)
+```

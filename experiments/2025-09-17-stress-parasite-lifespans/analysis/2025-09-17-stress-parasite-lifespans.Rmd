@@ -337,6 +337,7 @@ host_over_time_parent_task_data <- time_data %>%
   )
 
 host_parent_tasks_all_time_by_task <- host_over_time_parent_task_data %>%
+  # filter(update <= 100000) %>%
   group_by(
     SEED,
     treatment,
@@ -477,8 +478,6 @@ save_kable(
 ```
 
 ### Symbionts
-
-### Hosts
 
 Quantify whether tasks have been performed over course of entire run.
 

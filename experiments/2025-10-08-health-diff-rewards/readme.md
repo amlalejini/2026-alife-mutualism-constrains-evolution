@@ -2,6 +2,11 @@
 
 Purpose: Try health mutualist vs. health parasite vs no-sym with differential rewards.
 
+## Takeaways
+
+- Parasites go extinct because resource requirements at low-level tasks.
+  - Could decrease parasite resource requirements.
+
 ## Planning
 
 - Using 1, 2, 4, 8, 16 reward distribution
