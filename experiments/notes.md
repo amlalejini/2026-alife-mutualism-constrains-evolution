@@ -1,6 +1,15 @@
 # Notes from experiments / tinkering
 
-For stress mutualists / parasites:
+## Big picture next steps
+
+- Alife papers setup
+  -
+- Mutualist <--> parasite spectrum (implement interaction value / instruction-based)
+- Changing environment / spatial structure / multi-infection
+  - Repeat experiments in ALife
+
+## For stress mutualists / parasites:
+
 - When ousting, whether we favor current symbiont vs incoming symbiont matters.
   - For mutualist, important that VT is main mechanism of repro, so important that current symbiont is favored (to maintain relationship with host).
   - For parasite, important that HT is main mechanism of repro, better for incoming symbiont to be favored.
@@ -19,32 +28,18 @@ Using parent task performance for interactions instead of the current organism t
 I think I can still get sustained host-parasite coevolution with the "strictly stronger" mode of ousting by increasing stress frequency (to maintain strong selection pressure for hosts escaping and parasites chasing) but decreasing the death chance caused by parasites so that the host population doesn't get too small.
 ```
 
-TODO: try switching to parent-all, stronger-or-equal match; run mutualist + parasites.
+## For variable task rewards
+
+Context: no symbionts.
+- For higher value tasks to matter, needs to be worth it for hosts to spend extra
+  cpu cycles/genome space to perform high complexity task for extra resources.
+- I.e., hosts need to be resource limited to some extent. Or, need to be a selective benefit to accumulating more resources more efficiently.
+- Challenging to balance resource limit with minimum lifespan requirement.
+  - E.g., need to substantially increase resource requirements for reproduction + remove or increase maximum age.
 
 
-TRY:
-set TASK_PROFILE_MODE self-all
-set HORIZONTAL_TRANSMISSION_COMPATIBILITY_MODE task-profile-strictly-stronger-match
-set HOST_MIN_CYCLES_BEFORE_REPRO 150
-set SYM_MIN_CYCLES_BEFORE_REPRO 75
-set STRESS_FREQUENCY 75
-set PARASITE_DEATH_CHANCE 0.50
-set PARASITE_NUM_OFFSPRING_ON_STRESS_INTERACTION 8
----
-set TASK_PROFILE_MODE self-all                   # What should we use for task profiles for host-symbiont compatibility, preferential ousting, etc.?
-set TASK_PROFILE_COMPATIBILITY_MODE task-any-match
-set HORIZONTAL_TRANSMISSION_COMPATIBILITY_MODE task-profile-strictly-stronger-match # task-profile-strictly-stronger-match, task-profile-stronger-or-equal-match
-set HOST_MIN_CYCLES_BEFORE_REPRO 150
-set SYM_MIN_CYCLES_BEFORE_REPRO 75
-set ENABLE_STRESS 1             # Stress interactions enabled?
-set STRESS_TYPE parasite        # What kind of stress symbionts should be incorporated in stressful environments? (Options: 'mutualist', 'parasite', 'neutral')
-set STRESS_FREQUENCY 30        # How often should stress events occur (in updates)?
-set PARASITE_DEATH_CHANCE 0.30  # What death chance does a parasite confer?
-set MUTUALIST_DEATH_CHANCE 0.0    # What death chance does a mutualist confer?
-set BASE_DEATH_CHANCE 0.0         # What death chance does a host have in the absence of symbionts?
-set PARASITE_NUM_OFFSPRING_ON_STRESS_INTERACTION 8
+## Experiments still needed:
 
-strict matching
-stress frequency/death chance: 30/0.30, 20/0.2
-syms only first task: 0/1
-TODO: make stress ousting behave same way that non-stress ousting behaves
+- Stress
+  - Task restrictions: Try with limiting both hosts and parasites to one task and allowing both hosts and parasites to do multiple different tasks.
+  - Try reducing repro resources to require just one task.
